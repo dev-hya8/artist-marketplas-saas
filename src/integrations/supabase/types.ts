@@ -22,8 +22,13 @@ export type Database = {
           created_at: string | null
           currency_region: string | null
           display_name: string
+          facebook_handle: string | null
           id: string
+          instagram_handle: string | null
           measurement_unit: string | null
+          phone_number: string | null
+          primary_contact_method: string | null
+          twitter_handle: string | null
           updated_at: string | null
         }
         Insert: {
@@ -33,8 +38,13 @@ export type Database = {
           created_at?: string | null
           currency_region?: string | null
           display_name?: string
+          facebook_handle?: string | null
           id?: string
+          instagram_handle?: string | null
           measurement_unit?: string | null
+          phone_number?: string | null
+          primary_contact_method?: string | null
+          twitter_handle?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -44,8 +54,13 @@ export type Database = {
           created_at?: string | null
           currency_region?: string | null
           display_name?: string
+          facebook_handle?: string | null
           id?: string
+          instagram_handle?: string | null
           measurement_unit?: string | null
+          phone_number?: string | null
+          primary_contact_method?: string | null
+          twitter_handle?: string | null
           updated_at?: string | null
         }
         Relationships: []

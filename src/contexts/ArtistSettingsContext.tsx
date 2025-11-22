@@ -9,6 +9,11 @@ interface ArtistSettings {
   bio_text: string | null;
   bio_image_url: string | null;
   measurement_unit: string | null;
+  phone_number: string | null;
+  instagram_handle: string | null;
+  facebook_handle: string | null;
+  twitter_handle: string | null;
+  primary_contact_method: string | null;
 }
 
 interface ArtistSettingsContextType {

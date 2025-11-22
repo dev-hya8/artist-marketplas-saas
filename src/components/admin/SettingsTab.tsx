@@ -5,17 +5,26 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Upload } from "lucide-react";
 
 export const SettingsTab = () => {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [bioImagePreview, setBioImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     display_name: "",
     contact_email: "",
     bio_text: "",
     bio_image_url: "",
     measurement_unit: "in",
+    phone_number: "",
+    instagram_handle: "",
+    facebook_handle: "",
+    twitter_handle: "",
+    primary_contact_method: "form",
   });
 
   useEffect(() => {
@@ -37,10 +46,62 @@ export const SettingsTab = () => {
         bio_text: data.bio_text || "",
         bio_image_url: data.bio_image_url || "",
         measurement_unit: data.measurement_unit || "in",
+        phone_number: data.phone_number || "",
+        instagram_handle: data.instagram_handle || "",
+        facebook_handle: data.facebook_handle || "",
+        twitter_handle: data.twitter_handle || "",
+        primary_contact_method: data.primary_contact_method || "form",
       });
+      setBioImagePreview(data.bio_image_url || null);
     } catch (error: any) {
       console.error("Error fetching settings:", error);
       toast.error("Failed to load settings");
+    }
+  };
+
+  const handleBioImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File too large. Please select an image smaller than 5MB");
+      e.target.value = "";
+      return;
+    }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBioImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `bio-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('artwork_images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('artwork_images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, bio_image_url: publicUrl });
+      toast.success("Bio image uploaded successfully");
+    } catch (error: any) {
+      console.error("Image upload error:", error);
+      toast.error(error.message || "Failed to upload image");
+      setBioImagePreview(null);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -68,12 +129,17 @@ export const SettingsTab = () => {
           bio_text: formData.bio_text,
           bio_image_url: formData.bio_image_url,
           measurement_unit: formData.measurement_unit,
+          phone_number: formData.phone_number,
+          instagram_handle: formData.instagram_handle,
+          facebook_handle: formData.facebook_handle,
+          twitter_handle: formData.twitter_handle,
+          primary_contact_method: formData.primary_contact_method,
         })
         .eq("id", existing.id);
 
       if (error) throw error;
 
-      toast.success("Settings updated successfully");
+      toast.success("Profile updated!");
     } catch (error: any) {
       console.error("Error updating settings:", error);
       toast.error(error.message || "Failed to update settings");
@@ -83,76 +149,190 @@ export const SettingsTab = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Artist Settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="display_name">Display Name *</Label>
-            <Input
-              id="display_name"
-              value={formData.display_name}
-              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-              required
-            />
-          </div>
+    <div className="space-y-6">
+      {/* Basic Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Basic Settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="display_name">Display Name *</Label>
+              <Input
+                id="display_name"
+                value={formData.display_name}
+                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contact_email">Contact Email</Label>
-            <Input
-              id="contact_email"
-              type="email"
-              value={formData.contact_email}
-              onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-              placeholder="your@email.com"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="contact_email">Contact Email</Label>
+              <Input
+                id="contact_email"
+                type="email"
+                value={formData.contact_email}
+                onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                placeholder="your@email.com"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio_text">Artist Bio / Statement</Label>
-            <Textarea
-              id="bio_text"
-              value={formData.bio_text}
-              onChange={(e) => setFormData({ ...formData, bio_text: e.target.value })}
-              placeholder="Write your artist statement or bio here..."
-              rows={6}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="measurement_unit">Preferred Measurement Unit</Label>
+              <Select 
+                value={formData.measurement_unit} 
+                onValueChange={(value) => setFormData({ ...formData, measurement_unit: value })}
+              >
+                <SelectTrigger id="measurement_unit">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in">Inches (in)</SelectItem>
+                  <SelectItem value="cm">Centimeters (cm)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio_image_url">Bio Image URL</Label>
-            <Input
-              id="bio_image_url"
-              type="url"
-              value={formData.bio_image_url}
-              onChange={(e) => setFormData({ ...formData, bio_image_url: e.target.value })}
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
+      {/* Artist Profile */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Artist Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="bio_image">Bio Image</Label>
+              <div className="flex items-start gap-4">
+                {bioImagePreview && (
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
+                    <img 
+                      src={bioImagePreview} 
+                      alt="Bio preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    id="bio_image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBioImageUpload}
+                    disabled={uploading}
+                  />
+                  {uploading && <p className="text-sm text-muted-foreground mt-1">Uploading image...</p>}
+                </div>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="measurement_unit">Preferred Measurement Unit</Label>
-            <Select 
-              value={formData.measurement_unit} 
-              onValueChange={(value) => setFormData({ ...formData, measurement_unit: value })}
-            >
-              <SelectTrigger id="measurement_unit">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="in">Inches (in)</SelectItem>
-                <SelectItem value="cm">Centimeters (cm)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio_text">Artist Bio / Statement</Label>
+              <Textarea
+                id="bio_text"
+                value={formData.bio_text}
+                onChange={(e) => setFormData({ ...formData, bio_text: e.target.value })}
+                placeholder="Write your artist statement or bio here..."
+                rows={8}
+              />
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : "Save Settings"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      {/* Contact & Social Media */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Contact & Social Media</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">Phone Number</Label>
+              <Input
+                id="phone_number"
+                type="tel"
+                value={formData.phone_number}
+                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instagram_handle">Instagram Handle</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">@</span>
+                <Input
+                  id="instagram_handle"
+                  value={formData.instagram_handle}
+                  onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                  placeholder="yourusername"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="facebook_handle">Facebook Handle</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">facebook.com/</span>
+                <Input
+                  id="facebook_handle"
+                  value={formData.facebook_handle}
+                  onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
+                  placeholder="yourpage"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="twitter_handle">X (Twitter) Handle</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">@</span>
+                <Input
+                  id="twitter_handle"
+                  value={formData.twitter_handle}
+                  onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
+                  placeholder="yourusername"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Primary Contact Method</Label>
+              <RadioGroup
+                value={formData.primary_contact_method}
+                onValueChange={(value) => setFormData({ ...formData, primary_contact_method: value })}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="form" id="form" />
+                  <Label htmlFor="form" className="font-normal cursor-pointer">Use Contact Form</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="email" id="email" />
+                  <Label htmlFor="email" className="font-normal cursor-pointer">Display Email</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="phone" id="phone" />
+                  <Label htmlFor="phone" className="font-normal cursor-pointer">Display Phone</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Save Button */}
+      <Button 
+        type="submit" 
+        onClick={handleSubmit} 
+        disabled={loading || uploading}
+        className="w-full"
+      >
+        {loading ? "Saving..." : uploading ? "Uploading..." : "Save Profile"}
+      </Button>
+    </div>
   );
 };
