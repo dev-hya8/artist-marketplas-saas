@@ -37,6 +37,8 @@ export const AddArtworkDrawer = ({
 }: AddArtworkDrawerProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     image_url: "",
@@ -46,6 +48,51 @@ export const AddArtworkDrawer = ({
     medium: "",
     location: "",
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('artwork_images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('artwork_images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: publicUrl });
+
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      setImagePreview(null);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +125,7 @@ export const AddArtworkDrawer = ({
         medium: "",
         location: "",
       });
+      setImagePreview(null);
       
       onSuccess();
       onOpenChange(false);
@@ -111,14 +159,24 @@ export const AddArtworkDrawer = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image_url">Image URL</Label>
+            <Label htmlFor="image">Artwork Image</Label>
             <Input
-              id="image_url"
-              type="url"
-              placeholder="https://..."
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              disabled={uploading}
             />
+            {uploading && <p className="text-sm text-muted-foreground">Uploading image...</p>}
+            {imagePreview && (
+              <div className="mt-2">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-md border"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
