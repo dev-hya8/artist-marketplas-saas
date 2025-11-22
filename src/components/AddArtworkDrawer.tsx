@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -36,6 +37,7 @@ export const AddArtworkDrawer = ({
   onSuccess,
 }: AddArtworkDrawerProps) => {
   const { toast } = useToast();
+  const { convertPrice, currencyCode, exchangeRate } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -319,7 +321,7 @@ export const AddArtworkDrawer = ({
 
           {formData.sale_type === "fixed" ? (
             <div className="space-y-2">
-              <Label htmlFor="price">Price *</Label>
+              <Label htmlFor="price">Price (USD) *</Label>
               <Input
                 id="price"
                 type="number"
@@ -332,6 +334,11 @@ export const AddArtworkDrawer = ({
                 }}
                 className={errors.price ? "border-destructive" : ""}
               />
+              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== "USD" && (
+                <p className="text-xs text-muted-foreground">
+                  ≈ {convertPrice(parseFloat(formData.price))}
+                </p>
+              )}
               {errors.price && (
                 <p className="text-sm text-destructive">Price is required</p>
               )}
@@ -339,7 +346,7 @@ export const AddArtworkDrawer = ({
           ) : (
             <>
               <div className="space-y-2">
-                <Label htmlFor="starting_bid">Starting Bid *</Label>
+                <Label htmlFor="starting_bid">Starting Bid (USD) *</Label>
                 <Input
                   id="starting_bid"
                   type="number"
@@ -352,8 +359,13 @@ export const AddArtworkDrawer = ({
                   }}
                   className={errors.starting_bid ? "border-destructive" : ""}
                 />
+                {formData.starting_bid && parseFloat(formData.starting_bid) > 0 && currencyCode !== "USD" && (
+                  <p className="text-xs text-muted-foreground">
+                    ≈ {convertPrice(parseFloat(formData.starting_bid))}
+                  </p>
+                )}
                 {errors.starting_bid && (
-                  <p className="text-sm text-destructive">Starting bid is required for auctions</p>
+                  <p className="text-sm text-destructive">Starting Bid is required</p>
                 )}
               </div>
 
