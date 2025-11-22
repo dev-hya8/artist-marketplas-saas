@@ -147,6 +147,18 @@ export const AddArtworkDrawer = ({
 
     // Check if any errors exist
     if (Object.values(newErrors).some(error => error)) {
+      const errorMessages = [];
+      if (newErrors.image_url) errorMessages.push("Image is required");
+      if (newErrors.price) errorMessages.push("Price is required for Fixed Price items");
+      if (newErrors.dimensions) errorMessages.push("Dimensions are required");
+      if (newErrors.medium) errorMessages.push("Medium is required");
+      if (newErrors.location) errorMessages.push("Location is required");
+      if (newErrors.auction_end_time) errorMessages.push("Auction End Time is required for auctions");
+      if (newErrors.starting_bid) errorMessages.push("Starting Bid is required for auctions");
+      
+      const errorMessage = errorMessages.join("\n");
+      window.alert("Validation Failed:\n\n" + errorMessage);
+      
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields before submitting",
@@ -158,6 +170,19 @@ export const AddArtworkDrawer = ({
     setLoading(true);
 
     try {
+      // Convert datetime-local to ISO string for database
+      let auctionEndTimeISO = null;
+      if (formData.sale_type === "auction" && formData.auction_end_time) {
+        try {
+          // datetime-local format: "2024-03-15T14:30"
+          // Convert to ISO string for database
+          auctionEndTimeISO = new Date(formData.auction_end_time).toISOString();
+        } catch (dateError) {
+          window.alert("Invalid auction end time format: " + dateError);
+          throw new Error("Invalid auction end time format");
+        }
+      }
+
       const { error } = await supabase.from("artworks").insert({
         title: formData.title,
         image_url: formData.image_url || null,
@@ -167,12 +192,15 @@ export const AddArtworkDrawer = ({
         medium: formData.medium || null,
         location: formData.location || null,
         sale_type: formData.sale_type,
-        auction_end_time: formData.sale_type === "auction" && formData.auction_end_time ? formData.auction_end_time : null,
+        auction_end_time: auctionEndTimeISO,
         current_bid: formData.sale_type === "auction" && formData.starting_bid ? parseFloat(formData.starting_bid) : null,
         min_bid_increment: formData.sale_type === "auction" && formData.min_bid_increment ? parseFloat(formData.min_bid_increment) : 100,
       });
 
-      if (error) throw error;
+      if (error) {
+        window.alert("Database Error:\n\n" + JSON.stringify(error, null, 2));
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -318,7 +346,7 @@ export const AddArtworkDrawer = ({
 
               <div className="space-y-2">
                 <Label htmlFor="auction_end_time">Auction End Time *</Label>
-                <Input
+                <input
                   id="auction_end_time"
                   type="datetime-local"
                   value={formData.auction_end_time}
@@ -326,11 +354,12 @@ export const AddArtworkDrawer = ({
                     setFormData({ ...formData, auction_end_time: e.target.value });
                     setErrors({ ...errors, auction_end_time: false });
                   }}
-                  className={errors.auction_end_time ? "border-destructive" : ""}
+                  className={`flex h-10 w-full rounded-md border ${errors.auction_end_time ? "border-destructive" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
                 />
                 {errors.auction_end_time && (
                   <p className="text-sm text-destructive">Auction end time is required for auctions</p>
                 )}
+                <p className="text-xs text-muted-foreground">Select a date and time in the future</p>
               </div>
 
               <div className="space-y-2">
