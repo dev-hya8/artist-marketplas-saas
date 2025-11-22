@@ -53,6 +53,18 @@ export const AddArtworkDrawer = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      e.target.value = ""; // Reset file input
+      return;
+    }
+
     // Show preview immediately
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -83,9 +95,10 @@ export const AddArtworkDrawer = ({
         description: "Image uploaded successfully",
       });
     } catch (error: any) {
+      console.error("Image upload error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to upload image",
         variant: "destructive",
       });
       setImagePreview(null);
@@ -96,6 +109,16 @@ export const AddArtworkDrawer = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (uploading) {
+      toast({
+        title: "Please wait",
+        description: "Image is still uploading",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -130,9 +153,10 @@ export const AddArtworkDrawer = ({
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
+      console.error("Artwork submission error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to add artwork",
         variant: "destructive",
       });
     } finally {
@@ -240,11 +264,11 @@ export const AddArtworkDrawer = ({
           </div>
 
           <DrawerFooter className="px-0 pb-4">
-            <Button type="submit" disabled={loading}>
-              {loading ? "Adding..." : "Add Artwork"}
+            <Button type="submit" disabled={loading || uploading}>
+              {loading ? "Adding..." : uploading ? "Uploading..." : "Add Artwork"}
             </Button>
             <DrawerClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" disabled={loading || uploading}>Cancel</Button>
             </DrawerClose>
           </DrawerFooter>
         </form>
