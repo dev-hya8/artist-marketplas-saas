@@ -16,27 +16,36 @@ export type Database = {
     Tables: {
       artist_settings: {
         Row: {
+          bio_image_url: string | null
+          bio_text: string | null
           contact_email: string | null
           created_at: string | null
           currency_region: string | null
           display_name: string
           id: string
+          measurement_unit: string | null
           updated_at: string | null
         }
         Insert: {
+          bio_image_url?: string | null
+          bio_text?: string | null
           contact_email?: string | null
           created_at?: string | null
           currency_region?: string | null
           display_name?: string
           id?: string
+          measurement_unit?: string | null
           updated_at?: string | null
         }
         Update: {
+          bio_image_url?: string | null
+          bio_text?: string | null
           contact_email?: string | null
           created_at?: string | null
           currency_region?: string | null
           display_name?: string
           id?: string
+          measurement_unit?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -77,6 +86,7 @@ export type Database = {
           buyer_email: string | null
           created_at: string | null
           current_bid: number | null
+          depth: number | null
           dimensions: string | null
           id: string
           image_url: string | null
@@ -97,6 +107,7 @@ export type Database = {
           buyer_email?: string | null
           created_at?: string | null
           current_bid?: number | null
+          depth?: number | null
           dimensions?: string | null
           id?: string
           image_url?: string | null
@@ -117,6 +128,7 @@ export type Database = {
           buyer_email?: string | null
           created_at?: string | null
           current_bid?: number | null
+          depth?: number | null
           dimensions?: string | null
           id?: string
           image_url?: string | null

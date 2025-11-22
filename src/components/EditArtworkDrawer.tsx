@@ -69,6 +69,7 @@ export const EditArtworkDrawer = ({
     price: artwork.price?.toString() || "",
     status: artwork.status,
     dimensions: artwork.dimensions || "",
+    depth: artwork.depth?.toString() || "",
     medium: artwork.medium || "",
     location: artwork.location || "",
     provenance_log: artwork.provenance_log || "",
@@ -87,6 +88,7 @@ export const EditArtworkDrawer = ({
           price: formData.price ? parseFloat(formData.price) : null,
           status: formData.status,
           dimensions: formData.dimensions || null,
+          depth: formData.depth ? parseFloat(formData.depth) : null,
           medium: formData.medium || null,
           location: formData.location || null,
           provenance_log: formData.provenance_log || null,
@@ -275,13 +277,26 @@ export const EditArtworkDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-dimensions">Dimensions</Label>
+              <Label htmlFor="edit-dimensions">Dimensions (H x W)</Label>
               <Input
                 id="edit-dimensions"
-                placeholder="e.g., 24x36 inches"
+                placeholder="e.g., 24 x 36"
                 value={formData.dimensions}
                 onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-depth">Depth (optional)</Label>
+              <Input
+                id="edit-depth"
+                type="number"
+                step="0.01"
+                placeholder="e.g., 2"
+                value={formData.depth}
+                onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
             </div>
 
             <div className="space-y-2">

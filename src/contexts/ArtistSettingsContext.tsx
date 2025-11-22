@@ -6,6 +6,9 @@ interface ArtistSettings {
   display_name: string;
   contact_email: string | null;
   currency_region: string;
+  bio_text: string | null;
+  bio_image_url: string | null;
+  measurement_unit: string | null;
 }
 
 interface ArtistSettingsContextType {

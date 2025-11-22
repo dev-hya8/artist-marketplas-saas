@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const SettingsTab = () => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     display_name: "",
     contact_email: "",
+    bio_text: "",
+    bio_image_url: "",
+    measurement_unit: "in",
   });
 
   useEffect(() => {
@@ -30,14 +34,13 @@ export const SettingsTab = () => {
       setFormData({
         display_name: data.display_name || "",
         contact_email: data.contact_email || "",
+        bio_text: data.bio_text || "",
+        bio_image_url: data.bio_image_url || "",
+        measurement_unit: data.measurement_unit || "in",
       });
     } catch (error: any) {
       console.error("Error fetching settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load settings",
-        variant: "destructive",
-      });
+      toast.error("Failed to load settings");
     }
   };
 
@@ -62,22 +65,18 @@ export const SettingsTab = () => {
         .update({
           display_name: formData.display_name,
           contact_email: formData.contact_email,
+          bio_text: formData.bio_text,
+          bio_image_url: formData.bio_image_url,
+          measurement_unit: formData.measurement_unit,
         })
         .eq("id", existing.id);
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Settings updated successfully",
-      });
+      toast.success("Settings updated successfully");
     } catch (error: any) {
       console.error("Error updating settings:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update settings",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to update settings");
     } finally {
       setLoading(false);
     }
@@ -87,7 +86,6 @@ export const SettingsTab = () => {
     <Card>
       <CardHeader>
         <CardTitle>Artist Settings</CardTitle>
-        <CardDescription>Manage your portfolio display settings</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,7 +106,46 @@ export const SettingsTab = () => {
               type="email"
               value={formData.contact_email}
               onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+              placeholder="your@email.com"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bio_text">Artist Bio / Statement</Label>
+            <Textarea
+              id="bio_text"
+              value={formData.bio_text}
+              onChange={(e) => setFormData({ ...formData, bio_text: e.target.value })}
+              placeholder="Write your artist statement or bio here..."
+              rows={6}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bio_image_url">Bio Image URL</Label>
+            <Input
+              id="bio_image_url"
+              type="url"
+              value={formData.bio_image_url}
+              onChange={(e) => setFormData({ ...formData, bio_image_url: e.target.value })}
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="measurement_unit">Preferred Measurement Unit</Label>
+            <Select 
+              value={formData.measurement_unit} 
+              onValueChange={(value) => setFormData({ ...formData, measurement_unit: value })}
+            >
+              <SelectTrigger id="measurement_unit">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in">Inches (in)</SelectItem>
+                <SelectItem value="cm">Centimeters (cm)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Button type="submit" disabled={loading}>

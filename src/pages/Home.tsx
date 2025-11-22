@@ -8,6 +8,7 @@ import { BidModal } from "@/components/public/BidModal";
 import { AuctionTimer } from "@/components/public/AuctionTimer";
 import { ArtworkCarousel } from "@/components/public/ArtworkCarousel";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import type { Database } from "@/integrations/supabase/types";
 
 type Artwork = Database["public"]["Tables"]["artworks"]["Row"];
@@ -19,6 +20,13 @@ export default function Home() {
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const { convertPrice, currencyCode } = useCurrency();
+  const { settings } = useArtistSettings();
+
+  const formatDimensions = (dimensions: string | null) => {
+    if (!dimensions) return null;
+    const unit = settings?.measurement_unit || "in";
+    return `${dimensions} ${unit}`;
+  };
 
   useEffect(() => {
     fetchArtworks();
@@ -122,9 +130,9 @@ export default function Home() {
                   <div className="space-y-2">
                     <h3 className="text-lg font-light tracking-wide">{artwork.title}</h3>
                     
-                    {artwork.dimensions && (
+                    {formatDimensions(artwork.dimensions) && (
                       <p className="text-sm text-muted-foreground font-light">
-                        {artwork.dimensions}
+                        {formatDimensions(artwork.dimensions)}
                       </p>
                     )}
 
@@ -183,9 +191,9 @@ export default function Home() {
                     <div className="space-y-2">
                       <h3 className="text-lg font-light tracking-wide">{artwork.title}</h3>
                       
-                      {artwork.dimensions && (
+                      {formatDimensions(artwork.dimensions) && (
                         <p className="text-sm text-muted-foreground font-light">
-                          {artwork.dimensions}
+                          {formatDimensions(artwork.dimensions)}
                         </p>
                       )}
 
