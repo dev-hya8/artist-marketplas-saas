@@ -123,6 +123,8 @@ export const AddArtworkDrawer = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form values on submit:', formData);
+    
     if (uploading) {
       toast({
         title: "Please wait",
@@ -175,13 +177,23 @@ export const AddArtworkDrawer = ({
       if (formData.sale_type === "auction" && formData.auction_end_time) {
         try {
           // datetime-local format: "2024-03-15T14:30"
+          console.log('Converting auction_end_time:', formData.auction_end_time);
           // Convert to ISO string for database
           auctionEndTimeISO = new Date(formData.auction_end_time).toISOString();
+          console.log('Converted to ISO:', auctionEndTimeISO);
         } catch (dateError) {
+          console.error('Date conversion error:', dateError);
           window.alert("Invalid auction end time format: " + dateError);
           throw new Error("Invalid auction end time format");
         }
       }
+
+      console.log('About to insert artwork with data:', {
+        title: formData.title,
+        sale_type: formData.sale_type,
+        auction_end_time: auctionEndTimeISO,
+        current_bid: formData.sale_type === "auction" && formData.starting_bid ? parseFloat(formData.starting_bid) : null,
+      });
 
       const { error } = await supabase.from("artworks").insert({
         title: formData.title,
@@ -198,6 +210,7 @@ export const AddArtworkDrawer = ({
       });
 
       if (error) {
+        console.error('Supabase insert error:', error);
         window.alert("Database Error:\n\n" + JSON.stringify(error, null, 2));
         throw error;
       }
@@ -351,7 +364,9 @@ export const AddArtworkDrawer = ({
                   type="datetime-local"
                   value={formData.auction_end_time}
                   onChange={(e) => {
-                    setFormData({ ...formData, auction_end_time: e.target.value });
+                    const value = e.target.value;
+                    console.log('Auction end time changed to:', value);
+                    setFormData({ ...formData, auction_end_time: value });
                     setErrors({ ...errors, auction_end_time: false });
                   }}
                   className={`flex h-10 w-full rounded-md border ${errors.auction_end_time ? "border-destructive" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
@@ -359,7 +374,9 @@ export const AddArtworkDrawer = ({
                 {errors.auction_end_time && (
                   <p className="text-sm text-destructive">Auction end time is required for auctions</p>
                 )}
-                <p className="text-xs text-muted-foreground">Select a date and time in the future</p>
+                <p className="text-xs text-muted-foreground">
+                  Current value: {formData.auction_end_time || 'Not set'}
+                </p>
               </div>
 
               <div className="space-y-2">
