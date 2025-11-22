@@ -33,6 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Trash2 } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -54,6 +55,7 @@ export const EditArtworkDrawer = ({
   onClose,
 }: EditArtworkDrawerProps) => {
   const { toast } = useToast();
+  const { convertPrice, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [showSoldDialog, setShowSoldDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -238,7 +240,7 @@ export const EditArtworkDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Price</Label>
+              <Label htmlFor="edit-price">Price (USD)</Label>
               <Input
                 id="edit-price"
                 type="number"
@@ -247,6 +249,11 @@ export const EditArtworkDrawer = ({
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               />
+              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== "USD" && (
+                <p className="text-xs text-muted-foreground">
+                  ≈ {convertPrice(parseFloat(formData.price))}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -363,7 +370,7 @@ export const EditArtworkDrawer = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="final_price">Final Sale Price</Label>
+              <Label htmlFor="final_price">Final Sale Price (USD)</Label>
               <Input
                 id="final_price"
                 type="number"
@@ -372,8 +379,13 @@ export const EditArtworkDrawer = ({
                 value={soldData.final_price}
                 onChange={(e) => setSoldData({ ...soldData, final_price: e.target.value })}
               />
+              {soldData.final_price && parseFloat(soldData.final_price) > 0 && currencyCode !== "USD" && (
+                <p className="text-xs text-muted-foreground">
+                  ≈ {convertPrice(parseFloat(soldData.final_price))}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Leave empty to keep current price: ${artwork.price?.toLocaleString() || "N/A"}
+                Leave empty to use the listed price
               </p>
             </div>
           </div>

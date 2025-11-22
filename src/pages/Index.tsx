@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
 import { EditArtworkDrawer } from "@/components/EditArtworkDrawer";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab } from "@/components/admin/InquiriesTab";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -19,6 +26,7 @@ const Index = () => {
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const { toast } = useToast();
+  const { currencyCode, currencySymbol, setCurrency } = useCurrency();
 
   const { data: artworks, isLoading, refetch } = useQuery({
     queryKey: ["artworks"],
@@ -47,7 +55,29 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  {currencyCode} {currencySymbol}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
+                {CURRENCIES.map((currency) => (
+                  <DropdownMenuItem
+                    key={currency.code}
+                    onClick={() => setCurrency(currency.code)}
+                    className={currencyCode === currency.code ? "bg-accent" : ""}
+                  >
+                    {currency.code} ({currency.symbol}) - {currency.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 

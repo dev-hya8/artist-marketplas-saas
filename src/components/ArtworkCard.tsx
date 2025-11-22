@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -17,6 +18,8 @@ const statusColors = {
 };
 
 export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
+  const { convertPrice, currencyCode } = useCurrency();
+  
   return (
     <Card
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -40,9 +43,16 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
           <h3 className="font-semibold text-lg line-clamp-2">{artwork.title}</h3>
         </div>
         <div className="flex justify-between items-center">
-          <p className="text-xl font-bold">
-            {artwork.price ? `$${artwork.price.toLocaleString()}` : "N/A"}
-          </p>
+          <div className="space-y-0.5">
+            <p className="text-xl font-bold">
+              {artwork.price ? convertPrice(Number(artwork.price)) : "N/A"}
+            </p>
+            {artwork.price && currencyCode !== "USD" && (
+              <p className="text-xs text-muted-foreground">
+                ${artwork.price.toLocaleString()} USD
+              </p>
+            )}
+          </div>
           <Badge className={statusColors[artwork.status]}>{artwork.status}</Badge>
         </div>
       </CardContent>
