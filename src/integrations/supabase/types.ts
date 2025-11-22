@@ -14,50 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
+      artist_settings: {
+        Row: {
+          contact_email: string | null
+          created_at: string | null
+          currency_region: string | null
+          display_name: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string | null
+          currency_region?: string | null
+          display_name?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string | null
+          currency_region?: string | null
+          display_name?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       artworks: {
         Row: {
+          auction_end_time: string | null
+          bid_history: Json | null
           buyer_email: string | null
           created_at: string | null
+          current_bid: number | null
           dimensions: string | null
           id: string
           image_url: string | null
           location: string | null
           medium: string | null
+          min_bid_increment: number | null
           price: number | null
           provenance_log: string | null
+          sale_type: string | null
           status: Database["public"]["Enums"]["artwork_status"]
           title: string
           updated_at: string | null
+          winner_name: string | null
         }
         Insert: {
+          auction_end_time?: string | null
+          bid_history?: Json | null
           buyer_email?: string | null
           created_at?: string | null
+          current_bid?: number | null
           dimensions?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
           medium?: string | null
+          min_bid_increment?: number | null
           price?: number | null
           provenance_log?: string | null
+          sale_type?: string | null
           status?: Database["public"]["Enums"]["artwork_status"]
           title: string
           updated_at?: string | null
+          winner_name?: string | null
         }
         Update: {
+          auction_end_time?: string | null
+          bid_history?: Json | null
           buyer_email?: string | null
           created_at?: string | null
+          current_bid?: number | null
           dimensions?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
           medium?: string | null
+          min_bid_increment?: number | null
           price?: number | null
           provenance_log?: string | null
+          sale_type?: string | null
           status?: Database["public"]["Enums"]["artwork_status"]
           title?: string
           updated_at?: string | null
+          winner_name?: string | null
         }
         Relationships: []
+      }
+      inquiries: {
+        Row: {
+          artwork_id: string | null
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          artwork_id?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          artwork_id?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiries_artwork_id_fkey"
+            columns: ["artwork_id"]
+            isOneToOne: false
+            referencedRelation: "artworks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
