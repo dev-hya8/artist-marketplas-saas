@@ -1,131 +1,101 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
 interface CurrencyContextType {
-  selectedCountry: string;
   currencyCode: string;
-  convertPrice: (usdPrice: number) => Promise<string>;
-  setCountry: (country: string) => void;
+  currencySymbol: string;
+  convertPrice: (usdPrice: number) => string;
+  setCurrency: (currency: string) => void;
+  exchangeRate: number;
 }
 
-const COUNTRIES = [
-  { code: "US", name: "United States", currency: "USD" },
-  { code: "GB", name: "United Kingdom", currency: "GBP" },
-  { code: "EU", name: "Eurozone", currency: "EUR" },
-  { code: "JP", name: "Japan", currency: "JPY" },
-  { code: "CA", name: "Canada", currency: "CAD" },
-  { code: "AU", name: "Australia", currency: "AUD" },
-  { code: "PH", name: "Philippines", currency: "PHP" },
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
 ];
+
+const FALLBACK_RATES: Record<string, number> = {
+  USD: 1,
+  PHP: 58,
+  EUR: 0.92,
+  GBP: 0.79,
+};
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("USD");
-  const [showDialog, setShowDialog] = useState(false);
-  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+  const [exchangeRate, setExchangeRate] = useState<number>(1);
 
+  // Auto-detect locale and load saved preference
   useEffect(() => {
-    const savedCountry = localStorage.getItem("selectedCountry");
-    if (savedCountry) {
-      setSelectedCountry(savedCountry);
-      const country = COUNTRIES.find((c) => c.code === savedCountry);
-      if (country) {
-        setCurrencyCode(country.currency);
-      }
+    const savedCurrency = localStorage.getItem("selectedCurrency");
+    
+    if (savedCurrency) {
+      setCurrencyCode(savedCurrency);
     } else {
-      setShowDialog(true);
+      // Auto-detect: Check if user is in Philippines
+      try {
+        const locale = navigator.language || 'en-US';
+        if (locale.toLowerCase().includes('ph') || locale.toLowerCase().includes('fil')) {
+          setCurrencyCode('PHP');
+        }
+      } catch (error) {
+        console.log('Could not detect locale, defaulting to USD');
+      }
     }
   }, []);
 
+  // Fetch exchange rates when currency changes
   useEffect(() => {
-    if (currencyCode && currencyCode !== "USD") {
-      fetchExchangeRates();
+    if (currencyCode === "USD") {
+      setExchangeRate(1);
+      return;
     }
+
+    const fetchExchangeRates = async () => {
+      try {
+        const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${currencyCode}`);
+        const data = await response.json();
+        
+        if (data.rates && data.rates[currencyCode]) {
+          setExchangeRate(data.rates[currencyCode]);
+        } else {
+          // Use fallback rate if API fails
+          setExchangeRate(FALLBACK_RATES[currencyCode] || 1);
+        }
+      } catch (error) {
+        console.error("Error fetching exchange rates, using fallback:", error);
+        setExchangeRate(FALLBACK_RATES[currencyCode] || 1);
+      }
+    };
+
+    fetchExchangeRates();
   }, [currencyCode]);
 
-  const fetchExchangeRates = async () => {
-    try {
-      const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${currencyCode}`);
-      const data = await response.json();
-      setExchangeRates(data.rates);
-    } catch (error) {
-      console.error("Error fetching exchange rates:", error);
-    }
+  const setCurrency = (currency: string) => {
+    setCurrencyCode(currency);
+    localStorage.setItem("selectedCurrency", currency);
   };
 
-  const handleCountrySelect = (countryCode: string) => {
-    setSelectedCountry(countryCode);
-    localStorage.setItem("selectedCountry", countryCode);
-    const country = COUNTRIES.find((c) => c.code === countryCode);
-    if (country) {
-      setCurrencyCode(country.currency);
-    }
-    setShowDialog(false);
-  };
-
-  const convertPrice = async (usdPrice: number): Promise<string> => {
+  const convertPrice = (usdPrice: number): string => {
+    const currencyInfo = CURRENCIES.find(c => c.code === currencyCode);
+    const symbol = currencyInfo?.symbol || "$";
+    
     if (currencyCode === "USD") {
-      return `$${usdPrice.toLocaleString()}`;
+      return `${symbol}${usdPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
-    const rate = exchangeRates[currencyCode];
-    if (rate) {
-      const converted = usdPrice * rate;
-      const symbol = currencyCode === "EUR" ? "€" : currencyCode === "GBP" ? "£" : currencyCode === "JPY" ? "¥" : currencyCode;
-      return `${symbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-    }
-
-    return `$${usdPrice.toLocaleString()}`;
+    const converted = usdPrice * exchangeRate;
+    return `${symbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   };
 
-  const setCountry = (countryCode: string) => {
-    handleCountrySelect(countryCode);
-  };
+  const currencySymbol = CURRENCIES.find(c => c.code === currencyCode)?.symbol || "$";
 
   return (
-    <CurrencyContext.Provider value={{ selectedCountry, currencyCode, convertPrice, setCountry }}>
+    <CurrencyContext.Provider value={{ currencyCode, currencySymbol, convertPrice, setCurrency, exchangeRate }}>
       {children}
-
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Where are you visiting from?</DialogTitle>
-            <DialogDescription>
-              Select your country to see prices in your local currency
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Select onValueChange={handleCountrySelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your country" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.name} ({country.currency})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </DialogContent>
-      </Dialog>
     </CurrencyContext.Provider>
   );
 };
@@ -137,3 +107,5 @@ export const useCurrency = () => {
   }
   return context;
 };
+
+export { CURRENCIES };

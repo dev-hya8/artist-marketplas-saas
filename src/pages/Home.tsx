@@ -18,12 +18,19 @@ export default function Home() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [bidModalOpen, setBidModalOpen] = useState(false);
-  const { convertPrice } = useCurrency();
-  const [convertedPrices, setConvertedPrices] = useState<Record<string, string>>({});
+  const { convertPrice, currencyCode } = useCurrency();
 
   useEffect(() => {
     fetchArtworks();
   }, []);
+
+  // Refetch when currency changes to trigger re-render with new prices
+  useEffect(() => {
+    if (artworks.length > 0) {
+      // Trigger re-render when currency changes
+      setArtworks([...artworks]);
+    }
+  }, [currencyCode]);
 
   const fetchArtworks = async () => {
     try {
@@ -43,16 +50,6 @@ export default function Home() {
       });
 
       setArtworks(sorted || []);
-
-      // Convert prices for all artworks
-      const prices: Record<string, string> = {};
-      for (const artwork of sorted || []) {
-        const price = artwork.sale_type === "auction" ? artwork.current_bid : artwork.price;
-        if (price) {
-          prices[artwork.id] = await convertPrice(Number(price));
-        }
-      }
-      setConvertedPrices(prices);
     } catch (error) {
       console.error("Error fetching artworks:", error);
     } finally {
@@ -135,7 +132,7 @@ export default function Home() {
                       <div className="flex items-center justify-between pt-2">
                         {artwork.price && (
                           <p className="text-base font-light">
-                            {convertedPrices[artwork.id] || `$${artwork.price.toLocaleString()}`}
+                            {convertPrice(Number(artwork.price))}
                           </p>
                         )}
                         <Button 
@@ -195,7 +192,7 @@ export default function Home() {
                       <div className="space-y-1 pt-2">
                         {artwork.current_bid && (
                           <p className="text-base font-light">
-                            Current Bid: {convertedPrices[artwork.id] || `$${artwork.current_bid.toLocaleString()}`}
+                            Current Bid: {convertPrice(Number(artwork.current_bid))}
                           </p>
                         )}
                         

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface BidModalProps {
   open: boolean;
@@ -26,6 +27,7 @@ export const BidModal = ({
   onBidPlaced,
 }: BidModalProps) => {
   const { toast } = useToast();
+  const { convertPrice, currencyCode, exchangeRate } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     bidAmount: "",
@@ -40,12 +42,18 @@ export const BidModal = ({
     setLoading(true);
 
     try {
-      const bidAmount = parseFloat(formData.bidAmount);
+      // Convert bid from display currency back to USD
+      const bidAmountInDisplayCurrency = parseFloat(formData.bidAmount);
+      const bidAmountInUSD = currencyCode === "USD" 
+        ? bidAmountInDisplayCurrency 
+        : bidAmountInDisplayCurrency / exchangeRate;
 
-      if (bidAmount < minBid) {
+      const minBidInDisplayCurrency = minBid * exchangeRate;
+
+      if (bidAmountInDisplayCurrency < minBidInDisplayCurrency) {
         toast({
           title: "Bid Too Low",
-          description: `Your bid must be at least $${minBid.toLocaleString()}`,
+          description: `Your bid must be at least ${convertPrice(minBid)}`,
           variant: "destructive",
         });
         setLoading(false);
@@ -61,11 +69,11 @@ export const BidModal = ({
 
       if (fetchError) throw fetchError;
 
-      // Create new bid entry
+      // Create new bid entry (stored in USD)
       const newBid = {
         bidder_name: formData.bidderName,
         email: formData.email,
-        amount: bidAmount,
+        amount: bidAmountInUSD,
         timestamp: new Date().toISOString(),
       };
 
@@ -76,7 +84,7 @@ export const BidModal = ({
       const { error: updateError } = await supabase
         .from("artworks")
         .update({
-          current_bid: bidAmount,
+          current_bid: bidAmountInUSD,
           bid_history: updatedBidHistory,
         })
         .eq("id", artworkId);
@@ -85,7 +93,7 @@ export const BidModal = ({
 
       toast({
         title: "Bid Placed Successfully",
-        description: `Your bid of $${bidAmount.toLocaleString()} has been placed!`,
+        description: `Your bid of ${convertPrice(bidAmountInUSD)} has been placed!`,
       });
 
       setFormData({ bidAmount: "", bidderName: "", email: "" });
@@ -109,18 +117,18 @@ export const BidModal = ({
         <DialogHeader>
           <DialogTitle>Place Bid on "{artworkTitle}"</DialogTitle>
           <DialogDescription>
-            Current bid: ${currentBid.toLocaleString()} - Minimum bid: ${minBid.toLocaleString()}
+            Current bid: {convertPrice(currentBid)} - Minimum bid: {convertPrice(minBid)}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="bidAmount">Your Bid ($) *</Label>
+            <Label htmlFor="bidAmount">Your Bid ({currencyCode}) *</Label>
             <Input
               id="bidAmount"
               type="number"
               step="0.01"
-              min={minBid}
-              placeholder={minBid.toString()}
+              min={minBid * exchangeRate}
+              placeholder={(minBid * exchangeRate).toFixed(2)}
               value={formData.bidAmount}
               onChange={(e) => setFormData({ ...formData, bidAmount: e.target.value })}
               required
