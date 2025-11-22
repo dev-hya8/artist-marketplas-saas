@@ -47,6 +47,10 @@ export const AddArtworkDrawer = ({
     dimensions: "",
     medium: "",
     location: "",
+    sale_type: "fixed" as "fixed" | "auction",
+    auction_end_time: "",
+    starting_bid: "",
+    min_bid_increment: "100",
   });
   const [errors, setErrors] = useState({
     image_url: false,
@@ -153,11 +157,15 @@ export const AddArtworkDrawer = ({
       const { error } = await supabase.from("artworks").insert({
         title: formData.title,
         image_url: formData.image_url || null,
-        price: formData.price ? parseFloat(formData.price) : null,
+        price: formData.sale_type === "fixed" && formData.price ? parseFloat(formData.price) : null,
         status: formData.status,
         dimensions: formData.dimensions || null,
         medium: formData.medium || null,
         location: formData.location || null,
+        sale_type: formData.sale_type,
+        auction_end_time: formData.sale_type === "auction" && formData.auction_end_time ? formData.auction_end_time : null,
+        current_bid: formData.sale_type === "auction" && formData.starting_bid ? parseFloat(formData.starting_bid) : null,
+        min_bid_increment: formData.sale_type === "auction" && formData.min_bid_increment ? parseFloat(formData.min_bid_increment) : 100,
       });
 
       if (error) throw error;
@@ -175,6 +183,10 @@ export const AddArtworkDrawer = ({
         dimensions: "",
         medium: "",
         location: "",
+        sale_type: "fixed",
+        auction_end_time: "",
+        starting_bid: "",
+        min_bid_increment: "100",
       });
       setImagePreview(null);
       setErrors({
@@ -243,23 +255,80 @@ export const AddArtworkDrawer = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price">Price *</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={formData.price}
-              onChange={(e) => {
-                setFormData({ ...formData, price: e.target.value });
-                setErrors({ ...errors, price: false });
-              }}
-              className={errors.price ? "border-destructive" : ""}
-            />
-            {errors.price && (
-              <p className="text-sm text-destructive">Price is required</p>
-            )}
+            <Label htmlFor="sale_type">Sale Type</Label>
+            <Select
+              value={formData.sale_type}
+              onValueChange={(value: "fixed" | "auction") => setFormData({ ...formData, sale_type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">Fixed Price</SelectItem>
+                <SelectItem value="auction">Auction</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {formData.sale_type === "fixed" ? (
+            <div className="space-y-2">
+              <Label htmlFor="price">Price *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={formData.price}
+                onChange={(e) => {
+                  setFormData({ ...formData, price: e.target.value });
+                  setErrors({ ...errors, price: false });
+                }}
+                className={errors.price ? "border-destructive" : ""}
+              />
+              {errors.price && (
+                <p className="text-sm text-destructive">Price is required</p>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="starting_bid">Starting Bid *</Label>
+                <Input
+                  id="starting_bid"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.starting_bid}
+                  onChange={(e) => setFormData({ ...formData, starting_bid: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="auction_end_time">Auction End Time *</Label>
+                <Input
+                  id="auction_end_time"
+                  type="datetime-local"
+                  value={formData.auction_end_time}
+                  onChange={(e) => setFormData({ ...formData, auction_end_time: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="min_bid_increment">Minimum Bid Increment *</Label>
+                <Input
+                  id="min_bid_increment"
+                  type="number"
+                  step="0.01"
+                  placeholder="100"
+                  value={formData.min_bid_increment}
+                  onChange={(e) => setFormData({ ...formData, min_bid_increment: e.target.value })}
+                  required
+                />
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
