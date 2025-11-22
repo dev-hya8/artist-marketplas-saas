@@ -38,8 +38,8 @@ export const InquiryModal = ({ open, onOpenChange, artworkId, artworkTitle }: In
       if (error) throw error;
 
       toast({
-        title: "Inquiry Sent",
-        description: "Your inquiry has been sent successfully!",
+        title: "Message sent!",
+        description: "Hya will contact you soon.",
       });
 
       setFormData({ name: "", email: "", message: "" });
