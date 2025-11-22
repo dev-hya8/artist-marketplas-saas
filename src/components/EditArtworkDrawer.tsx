@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Trash2 } from "lucide-react";
+import { GalleryManager } from "@/components/admin/GalleryManager";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -306,6 +307,8 @@ export const EditArtworkDrawer = ({
                 rows={3}
               />
             </div>
+
+            <GalleryManager artworkId={artwork.id} />
 
             <DrawerFooter className="px-0 pb-4">
               {artwork.status !== "Sold" && (

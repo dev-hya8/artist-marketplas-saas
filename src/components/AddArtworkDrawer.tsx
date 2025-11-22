@@ -58,6 +58,8 @@ export const AddArtworkDrawer = ({
     dimensions: false,
     medium: false,
     location: false,
+    auction_end_time: false,
+    starting_bid: false,
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,10 +135,12 @@ export const AddArtworkDrawer = ({
     // Validate required fields
     const newErrors = {
       image_url: !formData.image_url,
-      price: !formData.price,
+      price: formData.sale_type === "fixed" ? !formData.price : false,
       dimensions: !formData.dimensions,
       medium: !formData.medium,
       location: !formData.location,
+      auction_end_time: formData.sale_type === "auction" ? !formData.auction_end_time : false,
+      starting_bid: formData.sale_type === "auction" ? !formData.starting_bid : false,
     };
 
     setErrors(newErrors);
@@ -195,6 +199,8 @@ export const AddArtworkDrawer = ({
         dimensions: false,
         medium: false,
         location: false,
+        auction_end_time: false,
+        starting_bid: false,
       });
       
       onSuccess();
@@ -299,9 +305,15 @@ export const AddArtworkDrawer = ({
                   step="0.01"
                   placeholder="0.00"
                   value={formData.starting_bid}
-                  onChange={(e) => setFormData({ ...formData, starting_bid: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, starting_bid: e.target.value });
+                    setErrors({ ...errors, starting_bid: false });
+                  }}
+                  className={errors.starting_bid ? "border-destructive" : ""}
                 />
+                {errors.starting_bid && (
+                  <p className="text-sm text-destructive">Starting bid is required for auctions</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -310,9 +322,15 @@ export const AddArtworkDrawer = ({
                   id="auction_end_time"
                   type="datetime-local"
                   value={formData.auction_end_time}
-                  onChange={(e) => setFormData({ ...formData, auction_end_time: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, auction_end_time: e.target.value });
+                    setErrors({ ...errors, auction_end_time: false });
+                  }}
+                  className={errors.auction_end_time ? "border-destructive" : ""}
                 />
+                {errors.auction_end_time && (
+                  <p className="text-sm text-destructive">Auction end time is required for auctions</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -324,7 +342,6 @@ export const AddArtworkDrawer = ({
                   placeholder="100"
                   value={formData.min_bid_increment}
                   onChange={(e) => setFormData({ ...formData, min_bid_increment: e.target.value })}
-                  required
                 />
               </div>
             </>

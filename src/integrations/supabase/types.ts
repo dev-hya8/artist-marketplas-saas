@@ -41,6 +41,35 @@ export type Database = {
         }
         Relationships: []
       }
+      artwork_gallery: {
+        Row: {
+          artwork_id: string
+          created_at: string | null
+          id: string
+          image_url: string
+        }
+        Insert: {
+          artwork_id: string
+          created_at?: string | null
+          id?: string
+          image_url: string
+        }
+        Update: {
+          artwork_id?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artwork_gallery_artwork_id_fkey"
+            columns: ["artwork_id"]
+            isOneToOne: false
+            referencedRelation: "artworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artworks: {
         Row: {
           auction_end_time: string | null

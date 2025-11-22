@@ -58,7 +58,7 @@ export const InquiryModal = ({ open, onOpenChange, artworkId, artworkTitle }: In
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="z-50">
         <DialogHeader>
           <DialogTitle>Inquire About "{artworkTitle}"</DialogTitle>
           <DialogDescription>

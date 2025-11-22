@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InquiryModal } from "@/components/public/InquiryModal";
 import { BidModal } from "@/components/public/BidModal";
 import { AuctionTimer } from "@/components/public/AuctionTimer";
+import { ArtworkCarousel } from "@/components/public/ArtworkCarousel";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -60,6 +61,7 @@ export default function Home() {
   };
 
   const handleInquire = (artwork: Artwork) => {
+    console.log("Inquire clicked", artwork.title);
     setSelectedArtwork(artwork);
     setInquiryModalOpen(true);
   };
@@ -103,21 +105,15 @@ export default function Home() {
             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
               {fixedPriceArtworks.map((artwork) => (
                 <div key={artwork.id} className="break-inside-avoid group">
-                  <div className="relative mb-4 overflow-hidden bg-muted">
-                    {artwork.image_url ? (
-                      <img
-                        src={artwork.image_url}
-                        alt={artwork.title}
-                        className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="aspect-square flex items-center justify-center bg-muted">
-                        <span className="text-muted-foreground text-sm">No image</span>
-                      </div>
-                    )}
+                  <div className="relative mb-4">
+                    <ArtworkCarousel 
+                      artworkId={artwork.id}
+                      mainImageUrl={artwork.image_url}
+                      artworkTitle={artwork.title}
+                    />
                     
                     {artwork.status === "Sold" && (
-                      <div className="absolute top-4 right-4">
+                      <div className="absolute top-4 right-4 z-10">
                         <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
                           <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
                           <span className="text-xs font-medium text-destructive">SOLD</span>
@@ -171,21 +167,15 @@ export default function Home() {
                 
                 return (
                   <div key={artwork.id} className="break-inside-avoid group">
-                    <div className="relative mb-4 overflow-hidden bg-muted">
-                      {artwork.image_url ? (
-                        <img
-                          src={artwork.image_url}
-                          alt={artwork.title}
-                          className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="aspect-square flex items-center justify-center bg-muted">
-                          <span className="text-muted-foreground text-sm">No image</span>
-                        </div>
-                      )}
+                    <div className="relative mb-4">
+                      <ArtworkCarousel 
+                        artworkId={artwork.id}
+                        mainImageUrl={artwork.image_url}
+                        artworkTitle={artwork.title}
+                      />
                       
                       {ended && (
-                        <div className="absolute top-4 right-4">
+                        <div className="absolute top-4 right-4 z-10">
                           <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
                             <span className="text-xs font-medium text-destructive">ENDED</span>
                           </div>
