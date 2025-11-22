@@ -26,6 +26,9 @@ export const Navbar = () => {
               <Link to="/" className="text-sm font-light tracking-wide hover:opacity-70 transition-opacity">
                 Works
               </Link>
+              <Link to="/about" className="text-sm font-light tracking-wide hover:opacity-70 transition-opacity">
+                About
+              </Link>
               <Link to="/contact" className="text-sm font-light tracking-wide hover:opacity-70 transition-opacity">
                 Contact
               </Link>

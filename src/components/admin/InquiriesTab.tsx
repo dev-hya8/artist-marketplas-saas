@@ -9,6 +9,23 @@ import { Star, Archive, Trash2, RotateCcw, Trash } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
+// Hook to get unread count
+export const useUnreadInquiriesCount = () => {
+  return useQuery({
+    queryKey: ["unreadInquiriesCount"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("inquiries")
+        .select("*", { count: "exact", head: true })
+        .eq("is_read", false)
+        .eq("status", "inbox");
+      
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
 interface Inquiry {
   id: string;
   artwork_id: string;
@@ -71,6 +88,7 @@ export const InquiriesTab = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inquiries"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadInquiriesCount"] });
     },
   });
 

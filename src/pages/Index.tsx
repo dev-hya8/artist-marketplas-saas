@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,7 @@ import { ArtworkCard } from "@/components/ArtworkCard";
 import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
 import { EditArtworkDrawer } from "@/components/EditArtworkDrawer";
 import { SettingsTab } from "@/components/admin/SettingsTab";
-import { InquiriesTab } from "@/components/admin/InquiriesTab";
+import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables } from "@/integrations/supabase/types";
@@ -27,6 +28,7 @@ const Index = () => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const { toast } = useToast();
   const { currencyCode, currencySymbol, setCurrency } = useCurrency();
+  const { data: unreadCount = 0 } = useUnreadInquiriesCount();
 
   const { data: artworks, isLoading, refetch } = useQuery({
     queryKey: ["artworks"],
@@ -85,7 +87,17 @@ const Index = () => {
         <Tabs defaultValue="artworks" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="artworks">Artworks</TabsTrigger>
-            <TabsTrigger value="inquiries">Inquiries</TabsTrigger>
+            <TabsTrigger value="inquiries" className="relative">
+              Inquiries
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 

@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -19,6 +20,13 @@ const statusColors = {
 
 export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
   const { convertPrice, currencyCode } = useCurrency();
+  const { settings } = useArtistSettings();
+  
+  const formatDimensions = () => {
+    if (!artwork.dimensions) return null;
+    const unit = settings?.measurement_unit || "in";
+    return `${artwork.dimensions} ${unit}`;
+  };
   
   return (
     <Card
@@ -40,7 +48,12 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
       </div>
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg line-clamp-2">{artwork.title}</h3>
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg line-clamp-2">{artwork.title}</h3>
+            {formatDimensions() && (
+              <p className="text-sm text-muted-foreground">{formatDimensions()}</p>
+            )}
+          </div>
         </div>
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">

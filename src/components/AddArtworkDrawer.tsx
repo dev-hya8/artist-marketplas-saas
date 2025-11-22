@@ -47,6 +47,7 @@ export const AddArtworkDrawer = ({
     price: "",
     status: "Available" as ArtworkStatus,
     dimensions: "",
+    depth: "",
     medium: "",
     location: "",
     sale_type: "fixed" as "fixed" | "auction",
@@ -203,6 +204,7 @@ export const AddArtworkDrawer = ({
         price: formData.sale_type === "fixed" && formData.price ? parseFloat(formData.price) : null,
         status: formData.status,
         dimensions: formData.dimensions || null,
+        depth: formData.depth ? parseFloat(formData.depth) : null,
         medium: formData.medium || null,
         location: formData.location || null,
         sale_type: formData.sale_type,
@@ -228,6 +230,7 @@ export const AddArtworkDrawer = ({
         price: "",
         status: "Available",
         dimensions: "",
+        depth: "",
         medium: "",
         location: "",
         sale_type: "fixed",
@@ -424,10 +427,10 @@ export const AddArtworkDrawer = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dimensions">Dimensions *</Label>
+            <Label htmlFor="dimensions">Dimensions (H x W) *</Label>
             <Input
               id="dimensions"
-              placeholder="e.g., 24x36 inches"
+              placeholder="e.g., 24 x 36"
               value={formData.dimensions}
               onChange={(e) => {
                 setFormData({ ...formData, dimensions: e.target.value });
@@ -438,6 +441,19 @@ export const AddArtworkDrawer = ({
             {errors.dimensions && (
               <p className="text-sm text-destructive">Dimensions are required</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="depth">Depth (optional)</Label>
+            <Input
+              id="depth"
+              type="number"
+              step="0.01"
+              placeholder="e.g., 2"
+              value={formData.depth}
+              onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
           </div>
 
           <div className="space-y-2">
