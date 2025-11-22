@@ -139,24 +139,33 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          is_favorite: boolean
+          is_read: boolean
           message: string
           name: string
+          status: string
         }
         Insert: {
           artwork_id?: string | null
           created_at?: string | null
           email: string
           id?: string
+          is_favorite?: boolean
+          is_read?: boolean
           message: string
           name: string
+          status?: string
         }
         Update: {
           artwork_id?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          is_favorite?: boolean
+          is_read?: boolean
           message?: string
           name?: string
+          status?: string
         }
         Relationships: [
           {
