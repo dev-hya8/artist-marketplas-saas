@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Trash2 } from "lucide-react";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -55,6 +55,7 @@ export const EditArtworkDrawer = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showSoldDialog, setShowSoldDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [soldData, setSoldData] = useState({
     buyer_email: "",
     final_price: "",
@@ -141,6 +142,63 @@ export const EditArtworkDrawer = ({
       toast({
         title: "Error",
         description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setLoading(true);
+
+    try {
+      // First, delete the image from storage if it exists
+      if (artwork.image_url) {
+        try {
+          // Extract filename from the public URL
+          const urlParts = artwork.image_url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          
+          const { error: storageError } = await supabase.storage
+            .from('artwork_images')
+            .remove([fileName]);
+
+          if (storageError) {
+            console.error("Storage deletion error:", storageError);
+            // Continue with database deletion even if storage deletion fails
+          }
+        } catch (storageError: any) {
+          console.error("Storage deletion error:", storageError);
+          // Continue with database deletion
+        }
+      }
+
+      // Delete the database record
+      const { error: dbError } = await supabase
+        .from("artworks")
+        .delete()
+        .eq("id", artwork.id);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Artwork deleted successfully",
+      });
+      
+      setShowDeleteDialog(false);
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error("Artwork deletion error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete artwork",
         variant: "destructive",
       });
     } finally {
@@ -264,6 +322,15 @@ export const EditArtworkDrawer = ({
               <Button type="submit" disabled={loading}>
                 {loading ? "Updating..." : "Update Artwork"}
               </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={loading}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Artwork
+              </Button>
               <DrawerClose asChild>
                 <Button variant="outline" onClick={onClose}>Cancel</Button>
               </DrawerClose>
@@ -316,6 +383,27 @@ export const EditArtworkDrawer = ({
               disabled={!soldData.buyer_email || loading}
             >
               {loading ? "Processing..." : "Confirm Sale"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Artwork</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this artwork? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {loading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
