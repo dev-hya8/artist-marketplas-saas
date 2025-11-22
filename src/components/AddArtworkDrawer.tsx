@@ -48,6 +48,13 @@ export const AddArtworkDrawer = ({
     medium: "",
     location: "",
   });
+  const [errors, setErrors] = useState({
+    image_url: false,
+    price: false,
+    dimensions: false,
+    medium: false,
+    location: false,
+  });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,6 +126,27 @@ export const AddArtworkDrawer = ({
       return;
     }
 
+    // Validate required fields
+    const newErrors = {
+      image_url: !formData.image_url,
+      price: !formData.price,
+      dimensions: !formData.dimensions,
+      medium: !formData.medium,
+      location: !formData.location,
+    };
+
+    setErrors(newErrors);
+
+    // Check if any errors exist
+    if (Object.values(newErrors).some(error => error)) {
+      toast({
+        title: "Missing Required Fields",
+        description: "Please fill in all required fields before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -149,6 +177,13 @@ export const AddArtworkDrawer = ({
         location: "",
       });
       setImagePreview(null);
+      setErrors({
+        image_url: false,
+        price: false,
+        dimensions: false,
+        medium: false,
+        location: false,
+      });
       
       onSuccess();
       onOpenChange(false);
@@ -183,15 +218,19 @@ export const AddArtworkDrawer = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image">Artwork Image</Label>
+            <Label htmlFor="image">Artwork Image *</Label>
             <Input
               id="image"
               type="file"
               accept="image/*"
               onChange={handleFileUpload}
               disabled={uploading}
+              className={errors.image_url ? "border-destructive" : ""}
             />
             {uploading && <p className="text-sm text-muted-foreground">Uploading image...</p>}
+            {errors.image_url && !uploading && (
+              <p className="text-sm text-destructive">Image is required</p>
+            )}
             {imagePreview && (
               <div className="mt-2">
                 <img
@@ -204,15 +243,22 @@ export const AddArtworkDrawer = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price">Price</Label>
+            <Label htmlFor="price">Price *</Label>
             <Input
               id="price"
               type="number"
               step="0.01"
               placeholder="0.00"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, price: e.target.value });
+                setErrors({ ...errors, price: false });
+              }}
+              className={errors.price ? "border-destructive" : ""}
             />
+            {errors.price && (
+              <p className="text-sm text-destructive">Price is required</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -234,33 +280,54 @@ export const AddArtworkDrawer = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dimensions">Dimensions</Label>
+            <Label htmlFor="dimensions">Dimensions *</Label>
             <Input
               id="dimensions"
               placeholder="e.g., 24x36 inches"
               value={formData.dimensions}
-              onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, dimensions: e.target.value });
+                setErrors({ ...errors, dimensions: false });
+              }}
+              className={errors.dimensions ? "border-destructive" : ""}
             />
+            {errors.dimensions && (
+              <p className="text-sm text-destructive">Dimensions are required</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="medium">Medium</Label>
+            <Label htmlFor="medium">Medium *</Label>
             <Input
               id="medium"
               placeholder="e.g., Oil on canvas"
               value={formData.medium}
-              onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, medium: e.target.value });
+                setErrors({ ...errors, medium: false });
+              }}
+              className={errors.medium ? "border-destructive" : ""}
             />
+            {errors.medium && (
+              <p className="text-sm text-destructive">Medium is required</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location">Location *</Label>
             <Input
               id="location"
               placeholder="e.g., Studio, Gallery X"
               value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, location: e.target.value });
+                setErrors({ ...errors, location: false });
+              }}
+              className={errors.location ? "border-destructive" : ""}
             />
+            {errors.location && (
+              <p className="text-sm text-destructive">Location is required</p>
+            )}
           </div>
 
           <DrawerFooter className="px-0 pb-4">

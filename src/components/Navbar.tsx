@@ -6,7 +6,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-xl font-light tracking-wide hover:opacity-70 transition-opacity">
-            Artist Name
+            Hya Baliña
           </Link>
           <div className="flex gap-8">
             <Link to="/" className="text-sm font-light tracking-wide hover:opacity-70 transition-opacity">
