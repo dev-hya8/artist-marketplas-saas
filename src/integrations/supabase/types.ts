@@ -32,6 +32,7 @@ export type Database = {
           phone_number: string | null
           primary_contact_method: string | null
           twitter_handle: string | null
+          upcoming_events: string | null
           updated_at: string | null
         }
         Insert: {
@@ -51,6 +52,7 @@ export type Database = {
           phone_number?: string | null
           primary_contact_method?: string | null
           twitter_handle?: string | null
+          upcoming_events?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           phone_number?: string | null
           primary_contact_method?: string | null
           twitter_handle?: string | null
+          upcoming_events?: string | null
           updated_at?: string | null
         }
         Relationships: []

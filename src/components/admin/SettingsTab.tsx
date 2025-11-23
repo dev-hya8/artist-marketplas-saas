@@ -28,6 +28,7 @@ export const SettingsTab = () => {
     cv_exhibitions: "",
     cv_education: "",
     cv_awards: "",
+    upcoming_events: "",
   });
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export const SettingsTab = () => {
         cv_exhibitions: data.cv_exhibitions || "",
         cv_education: data.cv_education || "",
         cv_awards: data.cv_awards || "",
+        upcoming_events: data.upcoming_events || "",
       });
       setBioImagePreview(data.bio_image_url || null);
     } catch (error: any) {
@@ -143,6 +145,7 @@ export const SettingsTab = () => {
           cv_exhibitions: formData.cv_exhibitions,
           cv_education: formData.cv_education,
           cv_awards: formData.cv_awards,
+          upcoming_events: formData.upcoming_events,
         })
         .eq("id", existing.id);
 
@@ -369,6 +372,17 @@ export const SettingsTab = () => {
                 value={formData.cv_awards}
                 onChange={(e) => setFormData({ ...formData, cv_awards: e.target.value })}
                 placeholder="List your awards and recognition..."
+                rows={8}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="upcoming_events">Upcoming Art Events</Label>
+              <Textarea
+                id="upcoming_events"
+                value={formData.upcoming_events}
+                onChange={(e) => setFormData({ ...formData, upcoming_events: e.target.value })}
+                placeholder="List your upcoming events, one per line..."
                 rows={8}
               />
             </div>

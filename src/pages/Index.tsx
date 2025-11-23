@@ -16,8 +16,10 @@ import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
 import { EditArtworkDrawer } from "@/components/EditArtworkDrawer";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
+import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { User, Ruler } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -25,6 +27,7 @@ type Artwork = Tables<"artworks">;
 const Index = () => {
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const { toast } = useToast();
   const { currencyCode, currencySymbol, setCurrency } = useCurrency();
@@ -58,27 +61,42 @@ const Index = () => {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold">Artist Dashboard</h1>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  {currencyCode} {currencySymbol}
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
-                {CURRENCIES.map((currency) => (
-                  <DropdownMenuItem
-                    key={currency.code}
-                    onClick={() => setCurrency(currency.code)}
-                    className={currencyCode === currency.code ? "bg-accent" : ""}
-                  >
-                    {currency.code} ({currency.symbol}) - {currency.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    {currencyCode} {currencySymbol}
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
+                  {CURRENCIES.map((currency) => (
+                    <DropdownMenuItem
+                      key={currency.code}
+                      onClick={() => setCurrency(currency.code)}
+                      className={currencyCode === currency.code ? "bg-accent" : ""}
+                    >
+                      {currency.code} ({currency.symbol}) - {currency.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button variant="outline" size="sm" className="gap-1">
+                <Ruler className="h-3 w-3" />
+                Unit of Measurement
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setProfileDrawerOpen(true)}
+              >
+                <User className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -161,6 +179,11 @@ const Index = () => {
           onClose={handleDrawerClose}
         />
       )}
+
+      <ArtistProfileDrawer
+        open={profileDrawerOpen}
+        onOpenChange={setProfileDrawerOpen}
+      />
     </div>
   );
 };
