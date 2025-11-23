@@ -10,6 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
@@ -85,92 +91,123 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <h1 
-                className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
-                onClick={() => setActiveTab("artworks")}
-              >
-                Artist Dashboard
-              </h1>
-              
-              <div className="flex items-center gap-2">
-                {/* Currency Selector */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost"
-                      className="h-9 px-3 gap-2 border border-border hover:bg-accent rounded-full"
-                    >
-                      <Globe className="h-4 w-4" />
-                      <span className="font-semibold text-sm">{currencyCode}</span>
-                      <ChevronDown className="h-3 w-3 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="z-50">
-                    {CURRENCIES.map((currency) => (
-                      <DropdownMenuItem
-                        key={currency.code}
-                        onClick={() => setCurrency(currency.code)}
-                        className={currencyCode === currency.code ? "bg-accent" : ""}
-                      >
-                        {currency.name} ({currency.symbol})
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Profile Avatar - Direct Navigation */}
-                <Button 
-                  variant={activeTab === "profile" ? "default" : "outline"}
-                  size="icon"
-                  className="relative h-10 w-10"
-                  onClick={() => setActiveTab("profile")}
+    <TooltipProvider>
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <h1 
+                  className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
+                  onClick={() => setActiveTab("artworks")}
                 >
-                  {avatarUrl ? (
-                    <img 
-                      src={avatarUrl} 
-                      alt="Artist avatar" 
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="h-5 w-5" />
-                  )}
-                </Button>
+                  Artist Dashboard
+                </h1>
+                
+                <div className="flex items-center gap-2">
+                  {/* Currency Selector */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost"
+                              className="h-9 px-3 gap-2 border border-border hover:bg-accent rounded-full"
+                            >
+                              <Globe className="h-4 w-4" />
+                              <span className="font-semibold text-sm">{currencyCode}</span>
+                              <ChevronDown className="h-3 w-3 opacity-50" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="z-50">
+                            {CURRENCIES.map((currency) => (
+                              <DropdownMenuItem
+                                key={currency.code}
+                                onClick={() => setCurrency(currency.code)}
+                                className={currencyCode === currency.code ? "bg-accent" : ""}
+                              >
+                                {currency.name} ({currency.symbol})
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Change Display Currency</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-                {/* Message/Inquiries Icon */}
-              <Button
-                variant={activeTab === "inquiries" ? "default" : "outline"}
-                size="icon"
-                className="relative h-10 w-10"
-                onClick={() => setActiveTab("inquiries")}
-              >
-                <MessageSquare className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {unreadCount}
-                  </Badge>
-                )}
-              </Button>
+                  {/* Profile Avatar - Direct Navigation */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant={activeTab === "profile" ? "default" : "outline"}
+                        size="icon"
+                        className="relative h-10 w-10"
+                        onClick={() => setActiveTab("profile")}
+                      >
+                        {avatarUrl ? (
+                          <img 
+                            src={avatarUrl} 
+                            alt="Artist avatar" 
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Edit Artist Profile</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-              {/* Settings Icon */}
-              <Button
-                variant={activeTab === "settings" ? "default" : "outline"}
-                size="icon"
-                className="h-10 w-10"
-                onClick={() => setActiveTab("settings")}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
+                  {/* Message/Inquiries Icon */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTab === "inquiries" ? "default" : "outline"}
+                        size="icon"
+                        className="relative h-10 w-10"
+                        onClick={() => setActiveTab("inquiries")}
+                      >
+                        <MessageSquare className="h-5 w-5" />
+                        {unreadCount > 0 && (
+                          <Badge 
+                            variant="destructive" 
+                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                          >
+                            {unreadCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Inquiries & Messages</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Settings Icon */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={activeTab === "settings" ? "default" : "outline"}
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => setActiveTab("settings")}
+                      >
+                        <Settings className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>App Settings</p>
+                    </TooltipContent>
+                  </Tooltip>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -264,6 +301,7 @@ const Index = () => {
         />
       )}
     </div>
+    </TooltipProvider>
   );
 };
 
