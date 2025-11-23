@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface GalleryManagerProps {
   artworkId: string | null;
@@ -181,9 +181,12 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
 
       toast({
         title: "Success",
-        description: "Gallery image deleted successfully",
+        description: "Image removed",
       });
 
+      // Close lightbox if open
+      setLightboxImage(null);
+      
       fetchGalleryImages();
     } catch (error: any) {
       console.error("Error deleting gallery image:", error);
@@ -251,7 +254,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
           {galleryImages.map((image, index) => (
             <div key={image.id} className="relative group">
               <div 
-                className="w-full rounded-md border overflow-hidden cursor-pointer"
+                className="w-full rounded-md border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => openLightbox(image.image_url, index)}
               >
                 <img
@@ -259,24 +262,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                   alt="Gallery"
                   className="w-full h-auto max-h-[300px] object-contain"
                 />
-                {/* Hover overlay with Eye icon */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Eye className="h-6 w-6 text-white" />
-                </div>
               </div>
-              
-              {/* Circular X button - always visible on hover */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteImage(image.id, image.image_url);
-                }}
-                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/70 hover:bg-black/90 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
-                aria-label="Remove image"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
           ))}
         </div>
@@ -286,7 +272,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
 
       {/* Lightbox Modal with Navigation */}
       <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
-        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden" aria-describedby={undefined}>
           {lightboxImage && (
             <div className="relative w-full bg-black">
               <img
@@ -294,6 +280,29 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                 alt="Full size preview"
                 className="w-full h-auto max-h-[90vh] object-contain"
               />
+              
+              {/* Close Button - Top Right */}
+              <button
+                onClick={() => setLightboxImage(null)}
+                className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors z-20"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              
+              {/* Delete Button - Top Left */}
+              <button
+                onClick={() => {
+                  const currentImage = galleryImages[lightboxIndex];
+                  if (currentImage) {
+                    handleDeleteImage(currentImage.id, currentImage.image_url);
+                  }
+                }}
+                className="absolute top-4 left-4 h-10 w-10 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition-colors z-20"
+                aria-label="Delete image"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
               
               {/* Previous Button */}
               {lightboxIndex > 0 && (
