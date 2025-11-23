@@ -75,7 +75,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
         if (data.result === "success" && data.conversion_rates && data.conversion_rates[currencyCode]) {
           setExchangeRate(data.conversion_rates[currencyCode]);
           setIsRateFailed(false);
-          console.log(`CurrencyContext: Exchange rate for ${currencyCode} is ${data.conversion_rates[currencyCode]}`);
+          console.log(`✅ CurrencyContext: Updated rate for ${currencyCode} = ${data.conversion_rates[currencyCode]}`);
         } else {
           throw new Error("Rate not found in response");
         }
@@ -86,7 +86,14 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
+    // 🔥 Fetch immediately
     fetchExchangeRates();
+    
+    // 🔥 Then refresh every 1 hour (3,600,000 milliseconds)
+    const interval = setInterval(fetchExchangeRates, 3600000);
+    
+    // 🔥 Cleanup when currency changes or component unmounts
+    return () => clearInterval(interval);
   }, [currencyCode]);
 
   const setCurrency = (currency: string) => {
@@ -99,7 +106,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     const fromCurrencyInfo = CURRENCIES.find(c => c.code === fromCurrency);
     const fromSymbol = fromCurrencyInfo?.symbol || "$";
     
-    // 🔥 CHANGED - Allow fallback conversion
+    // Allow fallback conversion even when API fails
     if (isRateFailed) {
       console.log(`⚠️ Using fallback rates for ${currencyCode}`);
     }
