@@ -59,7 +59,13 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchExchangeRates = async () => {
       try {
-        const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${currencyCode}`);
+        const apiKey = import.meta.env.VITE_EXCHANGE_RATE_KEY;
+        
+        if (!apiKey) {
+          throw new Error("API key not configured");
+        }
+        
+        const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`);
         
         if (!response.ok) {
           throw new Error(`API returned ${response.status}`);
@@ -67,8 +73,8 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
         
         const data = await response.json();
         
-        if (data.rates && data.rates[currencyCode]) {
-          setExchangeRate(data.rates[currencyCode]);
+        if (data.result === "success" && data.conversion_rates && data.conversion_rates[currencyCode]) {
+          setExchangeRate(data.conversion_rates[currencyCode]);
           setIsRateFailed(false);
         } else {
           throw new Error("Rate not found in response");
