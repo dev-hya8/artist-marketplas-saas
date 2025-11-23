@@ -265,6 +265,20 @@ export const EditArtworkDrawer = ({
     }
   };
 
+  // Check for changes to enable/disable the update button
+  const hasChanges = 
+    formData.title !== artwork.title ||
+    formData.image_url !== (artwork.image_url || "") ||
+    formData.price !== (artwork.price?.toString() || "") ||
+    formData.base_currency !== (artwork.base_currency || "USD") ||
+    formData.status !== artwork.status ||
+    formData.dimensions !== (artwork.dimensions || "") ||
+    formData.dimension_unit !== (artwork.dimension_unit || "in") ||
+    formData.depth !== (artwork.depth?.toString() || "") ||
+    formData.medium !== (artwork.medium || "") ||
+    formData.location !== (artwork.location || "") ||
+    formData.provenance_log !== (artwork.provenance_log || "");
+
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -508,7 +522,7 @@ export const EditArtworkDrawer = ({
             </div>
 
             <DrawerFooter className="px-0 pb-4">
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || !hasChanges}>
                 {loading ? "Updating..." : "Update Artwork"}
               </Button>
               <Button
