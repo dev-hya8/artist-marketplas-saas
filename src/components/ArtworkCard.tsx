@@ -13,10 +13,10 @@ interface ArtworkCardProps {
 }
 
 const statusColors = {
-  Available: "bg-green-500 text-white hover:bg-green-600",
-  Sold: "bg-red-500 text-white hover:bg-red-600",
-  "On Loan": "bg-blue-500 text-white hover:bg-blue-600",
-  Reserved: "bg-yellow-500 text-white hover:bg-yellow-600",
+  Available: "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20",
+  Sold: "bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20",
+  "On Loan": "bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20",
+  Reserved: "bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20",
 };
 
 export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
@@ -83,7 +83,9 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
               <p className="text-base md:text-xl font-bold">N/A</p>
             )}
           </div>
-          <Badge className={`${statusColors[artwork.status]} px-2 py-0.5 md:px-3 md:py-1 text-xs md:text-sm font-medium shrink-0`}>{artwork.status}</Badge>
+          <Badge className={`${statusColors[artwork.status]} px-3 py-1 text-[10px] md:text-xs font-medium uppercase tracking-widest rounded-full shrink-0`}>
+            {artwork.status}
+          </Badge>
         </div>
       </CardContent>
     </Card>
