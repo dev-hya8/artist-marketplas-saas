@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { X } from "lucide-react";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -79,6 +80,7 @@ export const AddArtworkDrawer = ({
       console.error("Error fetching default unit:", error);
     }
   };
+  
   const [errors, setErrors] = useState({
     image_url: false,
     price: false,
@@ -94,6 +96,41 @@ export const AddArtworkDrawer = ({
   const checkForUnits = (text: string): boolean => {
     const unitKeywords = /\b(in|inch|inches|cm|ft|feet)\b/i;
     return unitKeywords.test(text);
+  };
+
+  const handleRemoveImage = async () => {
+    // Delete from storage if image was uploaded
+    if (formData.image_url) {
+      try {
+        const urlParts = formData.image_url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        const { error: deleteError } = await supabase.storage
+          .from('artwork_images')
+          .remove([fileName]);
+
+        if (deleteError) {
+          console.warn("Could not delete image from storage:", deleteError);
+        }
+      } catch (error) {
+        console.warn("Error deleting image:", error);
+      }
+    }
+
+    // Clear the image data
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: "" });
+    
+    // Reset the file input
+    const fileInput = document.getElementById('image') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+
+    toast({
+      title: "Image removed",
+      description: "The image has been removed successfully",
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,12 +368,23 @@ export const AddArtworkDrawer = ({
               <p className="text-sm text-destructive">Image is required</p>
             )}
             {imagePreview && (
-              <div className="mt-2">
+              <div className="mt-2 relative">
                 <img
                   src={imagePreview}
                   alt="Preview"
                   className="w-full h-48 object-cover rounded-md border"
                 />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2"
+                  disabled={uploading}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Remove Image
+                </Button>
               </div>
             )}
           </div>
