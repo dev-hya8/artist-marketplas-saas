@@ -38,6 +38,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
       const { data, error } = await supabase
         .from("artist_settings")
         .select("contact_email, phone_number, instagram_handle, facebook_handle, twitter_handle, cv_exhibitions, upcoming_events")
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
