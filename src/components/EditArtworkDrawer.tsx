@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Trash2, Upload } from "lucide-react";
+import { Trash2, Upload } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables, Database } from "@/integrations/supabase/types";
@@ -58,12 +58,8 @@ export const EditArtworkDrawer = ({
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [showSoldDialog, setShowSoldDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [soldData, setSoldData] = useState({
-    buyer_email: "",
-    final_price: "",
-  });
+  
   const [formData, setFormData] = useState({
     title: artwork.title,
     image_url: artwork.image_url || "",
@@ -77,7 +73,6 @@ export const EditArtworkDrawer = ({
     provenance_log: artwork.provenance_log || "",
   });
 
-  // BUG FIX: Reset form when artwork changes
   useEffect(() => {
     setFormData({
       title: artwork.title,
@@ -97,7 +92,6 @@ export const EditArtworkDrawer = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (5MB limit)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       toast({
@@ -111,7 +105,6 @@ export const EditArtworkDrawer = ({
 
     setUploading(true);
     try {
-      // Upload new image first
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = fileName;
@@ -126,7 +119,6 @@ export const EditArtworkDrawer = ({
         .from('artwork_images')
         .getPublicUrl(filePath);
 
-      // Delete old image if it exists
       if (artwork.image_url) {
         try {
           const urlParts = artwork.image_url.split('/');
@@ -144,7 +136,6 @@ export const EditArtworkDrawer = ({
         }
       }
 
-      // Update form data with new URL
       setFormData({ ...formData, image_url: publicUrl });
       
       toast({
@@ -206,45 +197,6 @@ export const EditArtworkDrawer = ({
     }
   };
 
-  const handleMarkAsSold = () => {
-    setShowSoldDialog(true);
-  };
-
-  const handleConfirmSold = async () => {
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("artworks")
-        .update({
-          status: "Sold",
-          buyer_email: soldData.buyer_email,
-          price: soldData.final_price ? parseFloat(soldData.final_price) : artwork.price,
-        })
-        .eq("id", artwork.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Artwork marked as sold",
-      });
-      
-      setShowSoldDialog(false);
-      setSoldData({ buyer_email: "", final_price: "" });
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = () => {
     setShowDeleteDialog(true);
   };
@@ -253,10 +205,8 @@ export const EditArtworkDrawer = ({
     setLoading(true);
 
     try {
-      // First, delete the image from storage if it exists
       if (artwork.image_url) {
         try {
-          // Extract filename from the public URL
           const urlParts = artwork.image_url.split('/');
           const fileName = urlParts[urlParts.length - 1];
           
@@ -266,15 +216,12 @@ export const EditArtworkDrawer = ({
 
           if (storageError) {
             console.error("Storage deletion error:", storageError);
-            // Continue with database deletion even if storage deletion fails
           }
         } catch (storageError: any) {
           console.error("Storage deletion error:", storageError);
-          // Continue with database deletion
         }
       }
 
-      // Delete the database record
       const { error: dbError } = await supabase
         .from("artworks")
         .delete()
@@ -371,7 +318,6 @@ export const EditArtworkDrawer = ({
                   value={formData.price}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow only numbers and decimal point
                     if (value === '' || /^\d*\.?\d*$/.test(value)) {
                       setFormData({ ...formData, price: value });
                     }
@@ -487,17 +433,6 @@ export const EditArtworkDrawer = ({
             </div>
 
             <DrawerFooter className="px-0 pb-4">
-              {artwork.status !== "Sold" && (
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={handleMarkAsSold}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Mark as Sold
-                </Button>
-              )}
               <Button type="submit" disabled={loading}>
                 {loading ? "Updating..." : "Update Artwork"}
               </Button>
@@ -517,60 +452,6 @@ export const EditArtworkDrawer = ({
           </form>
         </DrawerContent>
       </Drawer>
-
-      <AlertDialog open={showSoldDialog} onOpenChange={setShowSoldDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark as Sold</AlertDialogTitle>
-            <AlertDialogDescription>
-              Enter the buyer's information to complete the sale.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="buyer_email">Buyer Email *</Label>
-              <Input
-                id="buyer_email"
-                type="email"
-                placeholder="buyer@example.com"
-                value={soldData.buyer_email}
-                onChange={(e) => setSoldData({ ...soldData, buyer_email: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="final_price">Final Sale Price (USD)</Label>
-              <Input
-                id="final_price"
-                type="number"
-                step="0.01"
-                placeholder={artwork.price?.toString() || "0.00"}
-                value={soldData.final_price}
-                onChange={(e) => setSoldData({ ...soldData, final_price: e.target.value })}
-              />
-              {soldData.final_price && parseFloat(soldData.final_price) > 0 && !isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
-                <p className="text-xs text-muted-foreground">
-                  ≈ {convertPrice(parseFloat(soldData.final_price), artwork.base_currency || "USD")}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Leave empty to use the listed price
-              </p>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSoldData({ buyer_email: "", final_price: "" })}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmSold}
-              disabled={!soldData.buyer_email || loading}
-            >
-              {loading ? "Processing..." : "Confirm Sale"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
