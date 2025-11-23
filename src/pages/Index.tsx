@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, User, MessageSquare, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,6 @@ import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/Inquir
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { User, Ruler } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -25,6 +24,7 @@ const Index = () => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("artworks");
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
 
@@ -133,9 +133,15 @@ const Index = () => {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Artist Dashboard</h1>
+            <h1 
+              className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
+              onClick={() => setActiveTab("artworks")}
+            >
+              Artist Dashboard
+            </h1>
             
             <div className="flex items-center gap-2">
+              {/* Avatar Upload */}
               <div className="relative">
                 <input
                   type="file"
@@ -145,56 +151,68 @@ const Index = () => {
                   id="avatar-upload"
                   disabled={uploadingAvatar}
                 />
-                <label htmlFor="avatar-upload" className="cursor-pointer">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="relative"
-                    asChild
-                    disabled={uploadingAvatar}
-                  >
-                    <div className="flex items-center gap-2">
-                      {avatarUrl ? (
-                        <img 
-                          src={avatarUrl} 
-                          alt="Artist avatar" 
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
-                      {uploadingAvatar && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded">
-                          <Upload className="h-4 w-4 animate-pulse" />
-                        </div>
-                      )}
+                <Button 
+                  variant={profileDrawerOpen ? "default" : "outline"}
+                  size="icon"
+                  className="relative h-10 w-10"
+                  disabled={uploadingAvatar}
+                  onClick={() => setProfileDrawerOpen(true)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    document.getElementById('avatar-upload')?.click();
+                  }}
+                >
+                  {avatarUrl ? (
+                    <img 
+                      src={avatarUrl} 
+                      alt="Artist avatar" 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-5 w-5" />
+                  )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded">
+                      <Upload className="h-4 w-4 animate-pulse" />
                     </div>
-                  </Button>
-                </label>
+                  )}
+                </Button>
               </div>
+
+              {/* Message/Inquiries Icon */}
+              <Button
+                variant={activeTab === "inquiries" ? "default" : "outline"}
+                size="icon"
+                className="relative h-10 w-10"
+                onClick={() => setActiveTab("inquiries")}
+              >
+                <MessageSquare className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Settings Icon */}
+              <Button
+                variant={activeTab === "settings" ? "default" : "outline"}
+                size="icon"
+                className="h-10 w-10"
+                onClick={() => setActiveTab("settings")}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="artworks" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="artworks">Artworks</TabsTrigger>
-            <TabsTrigger value="inquiries" className="relative">
-              Inquiries
-              {unreadCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                >
-                  {unreadCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="artworks">
             {isLoading ? (
               <div className="flex justify-center items-center min-h-[50vh]">
