@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { toast } from "@/hooks/use-toast";
 
 interface CurrencyContextType {
   currencyCode: string;
   currencySymbol: string;
-  convertPrice: (usdPrice: number) => string;
+  convertPrice: (price: number, fromCurrency?: string) => string;
   setCurrency: (currency: string) => void;
   exchangeRate: number;
 }
@@ -57,17 +58,27 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     const fetchExchangeRates = async () => {
       try {
         const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${currencyCode}`);
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.rates && data.rates[currencyCode]) {
           setExchangeRate(data.rates[currencyCode]);
         } else {
-          // Use fallback rate if API fails
-          setExchangeRate(FALLBACK_RATES[currencyCode] || 1);
+          throw new Error("Rate not found in response");
         }
       } catch (error) {
-        console.error("Error fetching exchange rates, using fallback:", error);
+        console.error("Error fetching exchange rates:", error);
         setExchangeRate(FALLBACK_RATES[currencyCode] || 1);
+        
+        toast({
+          title: "Currency Conversion Warning",
+          description: "Error fetching live currency rates. Displaying fallback value.",
+          variant: "destructive",
+        });
       }
     };
 
@@ -79,15 +90,40 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("selectedCurrency", currency);
   };
 
-  const convertPrice = (usdPrice: number): string => {
-    const currencyInfo = CURRENCIES.find(c => c.code === currencyCode);
-    const symbol = currencyInfo?.symbol || "$";
+  const convertPrice = (price: number, fromCurrency: string = "USD"): string => {
+    const toCurrencyInfo = CURRENCIES.find(c => c.code === currencyCode);
+    const symbol = toCurrencyInfo?.symbol || "$";
     
-    if (currencyCode === "USD") {
-      return `${symbol}${usdPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    // If converting to the same currency, just format it
+    if (currencyCode === fromCurrency) {
+      return `${symbol}${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
-    const converted = usdPrice * exchangeRate;
+    // Convert from any currency to USD first, then to target currency
+    let priceInUSD = price;
+    
+    if (fromCurrency !== "USD") {
+      // Convert FROM the base currency TO USD
+      const fromRate = FALLBACK_RATES[fromCurrency] || 1;
+      priceInUSD = price / fromRate;
+      
+      console.log("=== CURRENCY CONVERSION DEBUG ===");
+      console.log(`RATE USED (${fromCurrency} to USD):`, fromRate);
+      console.log(`BASE CURRENCY:`, fromCurrency);
+      console.log(`PRICE IN USD:`, priceInUSD);
+    }
+    
+    // Now convert from USD to target currency
+    if (currencyCode === "USD") {
+      const finalValue = priceInUSD;
+      console.log(`FINAL CONVERTED VALUE (${currencyCode}):`, finalValue);
+      return `${symbol}${finalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    const converted = priceInUSD * exchangeRate;
+    console.log(`RATE USED (USD to ${currencyCode}):`, exchangeRate);
+    console.log(`FINAL CONVERTED VALUE (${currencyCode}):`, converted);
+    
     return `${symbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   };
 

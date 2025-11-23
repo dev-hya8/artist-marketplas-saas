@@ -140,7 +140,7 @@ export default function Home() {
                       <div className="flex items-center justify-between pt-2">
                         {artwork.price && (
                           <p className="text-base font-light">
-                            {convertPrice(Number(artwork.price))}
+                            {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
                           </p>
                         )}
                         <Button 
@@ -200,7 +200,7 @@ export default function Home() {
                       <div className="space-y-1 pt-2">
                         {artwork.current_bid && (
                           <p className="text-base font-light">
-                            Current Bid: {convertPrice(Number(artwork.current_bid))}
+                            Current Bid: {convertPrice(Number(artwork.current_bid), artwork.base_currency || "USD")}
                           </p>
                         )}
                         

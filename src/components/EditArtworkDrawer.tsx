@@ -401,7 +401,7 @@ export const EditArtworkDrawer = ({
               </div>
               {formData.price && parseFloat(formData.price) > 0 && currencyCode !== formData.base_currency && (
                 <p className="text-xs text-muted-foreground">
-                  ≈ {convertPrice(parseFloat(formData.price))}
+                  ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
                 </p>
               )}
             </div>
@@ -548,9 +548,9 @@ export const EditArtworkDrawer = ({
                 value={soldData.final_price}
                 onChange={(e) => setSoldData({ ...soldData, final_price: e.target.value })}
               />
-              {soldData.final_price && parseFloat(soldData.final_price) > 0 && currencyCode !== "USD" && (
+              {soldData.final_price && parseFloat(soldData.final_price) > 0 && currencyCode !== (artwork.base_currency || "USD") && (
                 <p className="text-xs text-muted-foreground">
-                  ≈ {convertPrice(parseFloat(soldData.final_price))}
+                  ≈ {convertPrice(parseFloat(soldData.final_price), artwork.base_currency || "USD")}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">

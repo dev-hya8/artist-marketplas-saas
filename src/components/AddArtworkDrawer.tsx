@@ -368,7 +368,7 @@ export const AddArtworkDrawer = ({
               </div>
               {formData.price && parseFloat(formData.price) > 0 && currencyCode !== formData.base_currency && (
                 <p className="text-xs text-muted-foreground">
-                  ≈ {convertPrice(parseFloat(formData.price))}
+                  ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
                 </p>
               )}
               {errors.price && (
