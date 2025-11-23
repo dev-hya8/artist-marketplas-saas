@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Upload, User, MessageSquare, Settings, X } from "lucide-react";
@@ -23,6 +23,7 @@ const Index = () => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
+  const [profileDrawerClosing, setProfileDrawerClosing] = useState(false);
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
 
@@ -68,6 +69,12 @@ const Index = () => {
   const handleDrawerClose = () => {
     setEditDrawerOpen(false);
     setSelectedArtwork(null);
+  };
+
+  const handleProfileClose = (shouldClose: boolean) => {
+    if (shouldClose) {
+      setActiveTab("artworks");
+    }
   };
 
   return (
@@ -176,22 +183,12 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="profile">
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-0 right-0 h-8 w-8"
-                onClick={() => setActiveTab("artworks")}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <ArtistProfileDrawer
-                open={true}
-                onOpenChange={() => setActiveTab("artworks")}
-                avatarUrl={avatarUrl}
-                onAvatarUpdate={setAvatarUrl}
-              />
-            </div>
+            <ArtistProfileDrawer
+              open={true}
+              onOpenChange={handleProfileClose}
+              avatarUrl={avatarUrl}
+              onAvatarUpdate={setAvatarUrl}
+            />
           </TabsContent>
 
           <TabsContent value="settings">
