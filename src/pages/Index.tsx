@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -29,9 +29,119 @@ const Index = () => {
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [measurementUnit, setMeasurementUnit] = useState<string>("in");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { toast } = useToast();
   const { currencyCode, currencySymbol, setCurrency } = useCurrency();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
+
+  // Fetch artist settings including measurement unit and avatar
+  useEffect(() => {
+    fetchArtistSettings();
+  }, []);
+
+  const fetchArtistSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("artist_settings")
+        .select("measurement_unit, avatar_url")
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setMeasurementUnit(data.measurement_unit || "in");
+        setAvatarUrl(data.avatar_url);
+      }
+    } catch (error) {
+      console.error("Error fetching artist settings:", error);
+    }
+  };
+
+  const handleMeasurementUnitChange = async (unit: string) => {
+    setMeasurementUnit(unit);
+    
+    try {
+      const { data: existing } = await supabase
+        .from("artist_settings")
+        .select("id")
+        .maybeSingle();
+
+      if (!existing) {
+        toast({ description: "Settings not found", variant: "destructive" });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("artist_settings")
+        .update({ measurement_unit: unit })
+        .eq("id", existing.id);
+
+      if (error) throw error;
+      
+      toast({ description: `Unit changed to ${unit}` });
+    } catch (error: any) {
+      console.error("Error updating measurement unit:", error);
+      toast({ description: "Failed to update unit", variant: "destructive" });
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (2MB limit for avatars)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({ description: "File too large. Please select an image smaller than 2MB", variant: "destructive" });
+      e.target.value = "";
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update database
+      const { data: existing } = await supabase
+        .from("artist_settings")
+        .select("id")
+        .maybeSingle();
+
+      if (!existing) {
+        throw new Error("Settings not found");
+      }
+
+      const { error: updateError } = await supabase
+        .from("artist_settings")
+        .update({ avatar_url: publicUrl })
+        .eq("id", existing.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({ description: "Avatar updated successfully!" });
+    } catch (error: any) {
+      console.error("Avatar upload error:", error);
+      toast({ description: error.message || "Failed to upload avatar", variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  };
 
   const { data: artworks, isLoading, refetch } = useQuery({
     queryKey: ["artworks"],
@@ -84,18 +194,71 @@ const Index = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="outline" size="sm" className="gap-1">
-                <Ruler className="h-3 w-3" />
-                Unit of Measurement
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    {measurementUnit}
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
+                  <DropdownMenuItem
+                    onClick={() => handleMeasurementUnitChange("cm")}
+                    className={measurementUnit === "cm" ? "bg-accent" : ""}
+                  >
+                    cm - Centimeters
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleMeasurementUnitChange("in")}
+                    className={measurementUnit === "in" ? "bg-accent" : ""}
+                  >
+                    in - Inches
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleMeasurementUnitChange("ft")}
+                    className={measurementUnit === "ft" ? "bg-accent" : ""}
+                  >
+                    ft - Feet
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setProfileDrawerOpen(true)}
-              >
-                <User className="h-4 w-4" />
-              </Button>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  id="avatar-upload"
+                  disabled={uploadingAvatar}
+                />
+                <label htmlFor="avatar-upload" className="cursor-pointer">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="relative"
+                    asChild
+                    disabled={uploadingAvatar}
+                  >
+                    <div className="flex items-center gap-2">
+                      {avatarUrl ? (
+                        <img 
+                          src={avatarUrl} 
+                          alt="Artist avatar" 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                      {uploadingAvatar && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded">
+                          <Upload className="h-4 w-4 animate-pulse" />
+                        </div>
+                      )}
+                    </div>
+                  </Button>
+                </label>
+              </div>
             </div>
           </div>
         </div>
