@@ -67,6 +67,7 @@ export const EditArtworkDrawer = ({
     base_currency: artwork.base_currency || "USD",
     status: artwork.status,
     dimensions: artwork.dimensions || "",
+    dimension_unit: artwork.dimension_unit || "in",
     depth: artwork.depth?.toString() || "",
     medium: artwork.medium || "",
     location: artwork.location || "",
@@ -81,6 +82,7 @@ export const EditArtworkDrawer = ({
       base_currency: artwork.base_currency || "USD",
       status: artwork.status,
       dimensions: artwork.dimensions || "",
+      dimension_unit: artwork.dimension_unit || "in",
       depth: artwork.depth?.toString() || "",
       medium: artwork.medium || "",
       location: artwork.location || "",
@@ -170,6 +172,7 @@ export const EditArtworkDrawer = ({
           base_currency: formData.base_currency,
           status: formData.status,
           dimensions: formData.dimensions || null,
+          dimension_unit: formData.dimension_unit,
           depth: formData.depth ? parseFloat(formData.depth) : null,
           medium: formData.medium || null,
           location: formData.location || null,
@@ -372,12 +375,28 @@ export const EditArtworkDrawer = ({
 
             <div className="space-y-2">
               <Label htmlFor="edit-dimensions">Dimensions (H x W)</Label>
-              <Input
-                id="edit-dimensions"
-                placeholder="e.g., 24 x 36"
-                value={formData.dimensions}
-                onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="edit-dimensions"
+                  placeholder="e.g., 24 x 36"
+                  value={formData.dimensions}
+                  onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                  className="flex-1"
+                />
+                <Select
+                  value={formData.dimension_unit}
+                  onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
+                >
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cm">cm</SelectItem>
+                    <SelectItem value="in">in</SelectItem>
+                    <SelectItem value="ft">ft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">

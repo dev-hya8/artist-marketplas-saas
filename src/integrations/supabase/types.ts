@@ -118,6 +118,7 @@ export type Database = {
           created_at: string | null
           current_bid: number | null
           depth: number | null
+          dimension_unit: string | null
           dimensions: string | null
           id: string
           image_url: string | null
@@ -140,6 +141,7 @@ export type Database = {
           created_at?: string | null
           current_bid?: number | null
           depth?: number | null
+          dimension_unit?: string | null
           dimensions?: string | null
           id?: string
           image_url?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           created_at?: string | null
           current_bid?: number | null
           depth?: number | null
+          dimension_unit?: string | null
           dimensions?: string | null
           id?: string
           image_url?: string | null
