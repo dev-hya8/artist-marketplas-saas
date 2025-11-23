@@ -1,10 +1,20 @@
 import { useState, useEffect } from "react";
-import { User, Camera, Upload, Plus, Trash2 } from "lucide-react";
+import { User, Camera, Upload, Plus, Trash2, X } from "lucide-react";
 import { FaInstagram, FaFacebook, FaXTwitter, FaTiktok } from "react-icons/fa6";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,18 +31,40 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     date: string;
   }
 
+  interface FormData {
+    contact_email: string;
+    phone_number: string;
+    instagram_handle: string;
+    facebook_handle: string;
+    twitter_handle: string;
+    tiktok_handle: string;
+    cv_exhibitions: EventItem[];
+    upcoming_events: EventItem[];
+  }
+
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [artistSettingsId, setArtistSettingsId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [initialFormData, setInitialFormData] = useState<FormData>({
     contact_email: "",
     phone_number: "",
     instagram_handle: "",
     facebook_handle: "",
     twitter_handle: "",
     tiktok_handle: "",
-    cv_exhibitions: [] as EventItem[],
-    upcoming_events: [] as EventItem[],
+    cv_exhibitions: [],
+    upcoming_events: [],
+  });
+  const [formData, setFormData] = useState<FormData>({
+    contact_email: "",
+    phone_number: "",
+    instagram_handle: "",
+    facebook_handle: "",
+    twitter_handle: "",
+    tiktok_handle: "",
+    cv_exhibitions: [],
+    upcoming_events: [],
   });
 
   useEffect(() => {
@@ -96,7 +128,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
           events = [];
         }
         
-        setFormData({
+        const loadedData = {
           contact_email: data.contact_email || "",
           phone_number: data.phone_number || "",
           instagram_handle: data.instagram_handle || "",
@@ -105,7 +137,10 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
           tiktok_handle: data.tiktok_handle || "",
           cv_exhibitions: exhibitions,
           upcoming_events: events,
-        });
+        };
+        
+        setFormData(loadedData);
+        setInitialFormData(JSON.parse(JSON.stringify(loadedData))); // Deep clone
       }
     } catch (error: any) {
       console.error("Error fetching profile:", error);
@@ -172,8 +207,19 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const hasUnsavedChanges = (): boolean => {
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+  };
+
+  const handleCloseAttempt = () => {
+    if (hasUnsavedChanges()) {
+      setShowUnsavedDialog(true);
+    } else {
+      onOpenChange(false);
+    }
+  };
+
+  const handleSaveAndClose = async () => {
     setLoading(true);
 
     try {
@@ -204,6 +250,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
       }
 
       toast.success("Profile updated successfully!");
+      setShowUnsavedDialog(false);
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error updating profile:", error);
@@ -211,6 +258,17 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDiscardAndClose = () => {
+    setFormData(JSON.parse(JSON.stringify(initialFormData))); // Reset to initial
+    setShowUnsavedDialog(false);
+    onOpenChange(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSaveAndClose();
   };
 
   const addExhibition = () => {
@@ -248,13 +306,46 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Artist Profile
-        </h2>
-      </div>
+    <>
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes in your profile. Do you want to save them before leaving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+              Keep Editing
+            </AlertDialogCancel>
+            <Button
+              variant="ghost"
+              onClick={handleDiscardAndClose}
+            >
+              Discard Changes
+            </Button>
+            <AlertDialogAction onClick={handleSaveAndClose} disabled={loading}>
+              {loading ? "Saving..." : "Save Changes"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <User className="h-6 w-6" />
+            Artist Profile
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCloseAttempt}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Avatar Upload Section */}
@@ -490,5 +581,6 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
         </Button>
       </form>
     </div>
+    </>
   );
 };
