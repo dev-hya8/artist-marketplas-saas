@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InquiryModal } from "@/components/public/InquiryModal";
 import { BidModal } from "@/components/public/BidModal";
@@ -104,10 +106,14 @@ export default function Home() {
           </TabsList>
 
           <TabsContent value="buy-now">
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {fixedPriceArtworks.map((artwork) => (
-                <div key={artwork.id} className="break-inside-avoid group">
-                  <div className="relative mb-4">
+                <Card 
+                  key={artwork.id} 
+                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => artwork.status === "Available" && handleInquire(artwork)}
+                >
+                  <div className="aspect-square relative bg-muted">
                     <ArtworkCarousel 
                       artworkId={artwork.id}
                       mainImageUrl={artwork.image_url}
@@ -115,54 +121,39 @@ export default function Home() {
                     />
                     
                     {artwork.status === "Sold" && (
-                      <div className="absolute top-4 right-4 z-10">
-                        <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                          <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                          <span className="text-xs font-medium text-destructive">SOLD</span>
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge className="bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 px-3 py-1 text-[10px] md:text-xs font-medium uppercase tracking-widest rounded-full">
+                          Sold
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  <CardContent className="p-3 md:p-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm md:text-lg line-clamp-2">{artwork.title}</h3>
+                      
+                      {formatDimensions(artwork.dimensions) && (
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                          {formatDimensions(artwork.dimensions)}
+                        </p>
+                      )}
+
+                      {artwork.status === "Available" && artwork.price && (
+                        <div className="pt-2 space-y-0.5">
+                          <p className="text-base md:text-xl font-bold">
+                            {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
+                          </p>
+                          {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
+                            <p className="text-xs text-muted-foreground">
+                              Listed as {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-light tracking-wide">{artwork.title}</h3>
-                    
-                    {formatDimensions(artwork.dimensions) && (
-                      <p className="text-sm text-muted-foreground font-light">
-                        {formatDimensions(artwork.dimensions)}
-                      </p>
-                    )}
-
-                     {artwork.status === "Available" && (
-                      <div className="flex items-center justify-between pt-2">
-                        {artwork.price && (() => {
-                          const displayPrice = convertPrice(Number(artwork.price), artwork.base_currency || "USD");
-                          console.log(`💰 [${artwork.title}] Price: ${artwork.base_currency || "USD"} ${artwork.price} → ${displayPrice} (${currencyCode})`);
-                          return (
-                            <div className="space-y-1">
-                              <p className="text-base font-light">
-                                {displayPrice}
-                              </p>
-                              {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
-                                <p className="text-xs text-muted-foreground">
-                                  {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })()}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="ml-auto"
-                          onClick={() => handleInquire(artwork)}
-                        >
-                          Inquire
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
 
@@ -174,13 +165,16 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="auctions">
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {auctionArtworks.map((artwork) => {
                 const ended = isAuctionEnded(artwork.auction_end_time);
                 
                 return (
-                  <div key={artwork.id} className="break-inside-avoid group">
-                    <div className="relative mb-4">
+                  <Card 
+                    key={artwork.id} 
+                    className="overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    <div className="aspect-square relative bg-muted">
                       <ArtworkCarousel 
                         artworkId={artwork.id}
                         mainImageUrl={artwork.image_url}
@@ -188,31 +182,29 @@ export default function Home() {
                       />
                       
                       {ended && (
-                        <div className="absolute top-4 right-4 z-10">
-                          <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                            <span className="text-xs font-medium text-destructive">ENDED</span>
-                          </div>
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge className="bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 px-3 py-1 text-[10px] md:text-xs font-medium uppercase tracking-widest rounded-full">
+                            Ended
+                          </Badge>
                         </div>
                       )}
                     </div>
 
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-light tracking-wide">{artwork.title}</h3>
-                      
-                      {formatDimensions(artwork.dimensions) && (
-                        <p className="text-sm text-muted-foreground font-light">
-                          {formatDimensions(artwork.dimensions)}
-                        </p>
-                      )}
+                    <CardContent className="p-3 md:p-4">
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-sm md:text-lg line-clamp-2">{artwork.title}</h3>
+                        
+                        {formatDimensions(artwork.dimensions) && (
+                          <p className="text-xs md:text-sm text-muted-foreground">
+                            {formatDimensions(artwork.dimensions)}
+                          </p>
+                        )}
 
-                      <div className="space-y-1 pt-2">
-                        {artwork.current_bid && (() => {
-                          const displayBid = convertPrice(Number(artwork.current_bid), artwork.base_currency || "USD");
-                          console.log(`💰 [${artwork.title}] Bid: ${artwork.base_currency || "USD"} ${artwork.current_bid} → ${displayBid} (${currencyCode})`);
-                          return (
-                            <div className="space-y-1">
-                              <p className="text-base font-light">
-                                Current Bid: {displayBid}
+                        <div className="pt-2 space-y-2">
+                          {artwork.current_bid && (
+                            <div className="space-y-0.5">
+                              <p className="text-base md:text-xl font-bold">
+                                {convertPrice(Number(artwork.current_bid), artwork.base_currency || "USD")}
                               </p>
                               {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
                                 <p className="text-xs text-muted-foreground">
@@ -220,42 +212,43 @@ export default function Home() {
                                 </p>
                               )}
                             </div>
-                          );
-                        })()}
-                        
-                        {artwork.auction_end_time && !ended && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Time Left:</span>
-                            <AuctionTimer 
-                              endTime={artwork.auction_end_time} 
-                              onExpire={() => fetchArtworks()}
-                            />
-                          </div>
-                        )}
+                          )}
+                          
+                          {artwork.auction_end_time && !ended && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-muted-foreground">Time Left:</span>
+                              <AuctionTimer 
+                                endTime={artwork.auction_end_time} 
+                                onExpire={() => fetchArtworks()}
+                              />
+                            </div>
+                          )}
 
-                        {ended ? (
-                          <div className="pt-2">
-                            <p className="text-sm text-destructive font-medium">
-                              Auction Ended
-                              {artwork.winner_name && ` - Winner: ${artwork.winner_name}`}
-                            </p>
-                            <Button variant="outline" size="sm" disabled className="mt-2 w-full">
-                              Bidding Closed
+                          {ended ? (
+                            <div>
+                              {artwork.winner_name && (
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  Winner: {artwork.winner_name}
+                                </p>
+                              )}
+                              <Button variant="outline" size="sm" disabled className="w-full">
+                                Bidding Closed
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleBid(artwork)}
+                            >
+                              Place Bid
                             </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            className="mt-2 w-full"
-                            onClick={() => handleBid(artwork)}
-                          >
-                            Place Bid
-                          </Button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
