@@ -1,3 +1,6 @@
+**Here's your FIXED code - copy and replace everything:**
+
+```typescript
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 
 interface CurrencyContextType {
@@ -99,12 +102,13 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     const fromCurrencyInfo = CURRENCIES.find(c => c.code === fromCurrency);
     const fromSymbol = fromCurrencyInfo?.symbol || "$";
     
-    if (isRateFailed && fromCurrency !== currencyCode) {
-      return `${fromSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${fromCurrency}`;
+    // 🔥 CHANGED - Allow fallback conversion
+    if (isRateFailed) {
+      console.log(`⚠️ Using fallback rates for ${currencyCode}`);
     }
     
     const toCurrencyInfo = CURRENCIES.find(c => c.code === currencyCode);
-const toSymbol = toCurrencyInfo?.symbol || "$";
+    const toSymbol = toCurrencyInfo?.symbol || "$";
     
     if (currencyCode === fromCurrency) {
       return `${toSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -144,3 +148,26 @@ export const useCurrency = () => {
 };
 
 export { CURRENCIES };
+```
+
+---
+
+## The Key Change (Lines 98-101):
+
+**❌ OLD (what you had):**
+```javascript
+if (isRateFailed && fromCurrency !== currencyCode) {
+  return `${fromSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${fromCurrency}`;
+}
+```
+
+**✅ NEW (what I fixed):**
+```javascript
+if (isRateFailed) {
+  console.log(`⚠️ Using fallback rates for ${currencyCode}`);
+}
+```
+
+Now it won't stop the conversion - it'll continue and use the fallback rates! 🎉
+
+**Does it work in Lovable now?**
