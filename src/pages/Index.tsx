@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Upload, User, MessageSquare, Settings, X, Globe } from "lucide-react";
+import { Plus, Upload, User, MessageSquare, Settings, X, Globe, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -101,14 +101,15 @@ const Index = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10"
+                      variant="ghost"
+                      className="h-9 px-3 gap-2 border border-border hover:bg-accent rounded-full"
                     >
-                      <Globe className="h-5 w-5" />
+                      <Globe className="h-4 w-4" />
+                      <span className="font-semibold text-sm">{currencyCode}</span>
+                      <ChevronDown className="h-3 w-3 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="z-50">
                     {CURRENCIES.map((currency) => (
                       <DropdownMenuItem
                         key={currency.code}
