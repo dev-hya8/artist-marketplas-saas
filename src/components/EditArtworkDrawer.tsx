@@ -59,6 +59,13 @@ export const EditArtworkDrawer = ({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
+  
+  // Function to check if dimensions contain unit keywords
+  const checkForUnits = (text: string): boolean => {
+    const unitKeywords = /\b(in|inch|inches|cm|ft|feet)\b/i;
+    return unitKeywords.test(text);
+  };
   
   const [formData, setFormData] = useState({
     title: artwork.title,
@@ -378,9 +385,13 @@ export const EditArtworkDrawer = ({
               <div className="flex gap-2">
                 <Input
                   id="edit-dimensions"
-                  placeholder="e.g., 24 x 36"
+                  placeholder="e.g. 24 x 36 (Enter numbers only)"
                   value={formData.dimensions}
-                  onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, dimensions: value });
+                    setDimensionUnitWarning(checkForUnits(value));
+                  }}
                   className="flex-1"
                 />
                 <Select
@@ -397,6 +408,11 @@ export const EditArtworkDrawer = ({
                   </SelectContent>
                 </Select>
               </div>
+              {dimensionUnitWarning && (
+                <p className="text-sm text-amber-600 dark:text-amber-500">
+                  ⚠️ Please select the unit from the dropdown instead of typing it.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

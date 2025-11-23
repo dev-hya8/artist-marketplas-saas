@@ -88,6 +88,13 @@ export const AddArtworkDrawer = ({
     auction_end_time: false,
     starting_bid: false,
   });
+  const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
+
+  // Function to check if dimensions contain unit keywords
+  const checkForUnits = (text: string): boolean => {
+    const unitKeywords = /\b(in|inch|inches|cm|ft|feet)\b/i;
+    return unitKeywords.test(text);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -485,11 +492,13 @@ export const AddArtworkDrawer = ({
             <div className="flex gap-2">
               <Input
                 id="dimensions"
-                placeholder="e.g., 24 x 36"
+                placeholder="e.g. 24 x 36 (Enter numbers only)"
                 value={formData.dimensions}
                 onChange={(e) => {
-                  setFormData({ ...formData, dimensions: e.target.value });
+                  const value = e.target.value;
+                  setFormData({ ...formData, dimensions: value });
                   setErrors({ ...errors, dimensions: false });
+                  setDimensionUnitWarning(checkForUnits(value));
                 }}
                 className={`flex-1 ${errors.dimensions ? "border-destructive" : ""}`}
               />
@@ -507,6 +516,11 @@ export const AddArtworkDrawer = ({
                 </SelectContent>
               </Select>
             </div>
+            {dimensionUnitWarning && (
+              <p className="text-sm text-amber-600 dark:text-amber-500">
+                ⚠️ Please select the unit from the dropdown instead of typing it.
+              </p>
+            )}
             {errors.dimensions && (
               <p className="text-sm text-destructive">Dimensions are required</p>
             )}
