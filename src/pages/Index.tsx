@@ -20,7 +20,6 @@ type Artwork = Tables<"artworks">;
 const Index = () => {
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
-  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
@@ -84,12 +83,12 @@ const Index = () => {
               </h1>
               
               <div className="flex items-center gap-2">
-                {/* Profile Avatar - Opens Drawer */}
+                {/* Profile Avatar - Direct Navigation */}
                 <Button 
-                  variant={profileDrawerOpen ? "default" : "outline"}
+                  variant={activeTab === "profile" ? "default" : "outline"}
                   size="icon"
                   className="relative h-10 w-10"
-                  onClick={() => setProfileDrawerOpen(true)}
+                  onClick={() => setActiveTab("profile")}
                 >
                   {avatarUrl ? (
                     <img 
@@ -176,6 +175,25 @@ const Index = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="profile">
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-0 right-0 h-8 w-8"
+                onClick={() => setActiveTab("artworks")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <ArtistProfileDrawer
+                open={true}
+                onOpenChange={() => setActiveTab("artworks")}
+                avatarUrl={avatarUrl}
+                onAvatarUpdate={setAvatarUrl}
+              />
+            </div>
+          </TabsContent>
+
           <TabsContent value="settings">
             <div className="relative">
               <Button
@@ -216,13 +234,6 @@ const Index = () => {
           onClose={handleDrawerClose}
         />
       )}
-
-      <ArtistProfileDrawer
-        open={profileDrawerOpen}
-        onOpenChange={setProfileDrawerOpen}
-        avatarUrl={avatarUrl}
-        onAvatarUpdate={setAvatarUrl}
-      />
     </div>
   );
 };
