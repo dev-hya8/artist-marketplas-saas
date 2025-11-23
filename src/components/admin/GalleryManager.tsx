@@ -207,7 +207,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading gallery...</p>
       ) : galleryImages.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {galleryImages.map((image) => (
             <div key={image.id} className="relative group">
               <div 
@@ -217,7 +217,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                 <img
                   src={image.image_url}
                   alt="Gallery"
-                  className="w-full h-auto"
+                  className="w-full h-auto max-h-[300px] object-contain"
                 />
                 {/* Hover overlay with Eye icon */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
