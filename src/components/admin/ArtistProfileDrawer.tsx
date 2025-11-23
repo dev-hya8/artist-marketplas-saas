@@ -38,19 +38,21 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
       const { data, error } = await supabase
         .from("artist_settings")
         .select("contact_email, phone_number, instagram_handle, facebook_handle, twitter_handle, cv_exhibitions, upcoming_events")
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
-      setFormData({
-        contact_email: data.contact_email || "",
-        phone_number: data.phone_number || "",
-        instagram_handle: data.instagram_handle || "",
-        facebook_handle: data.facebook_handle || "",
-        twitter_handle: data.twitter_handle || "",
-        cv_exhibitions: data.cv_exhibitions || "",
-        upcoming_events: data.upcoming_events || "",
-      });
+      if (data) {
+        setFormData({
+          contact_email: data.contact_email || "",
+          phone_number: data.phone_number || "",
+          instagram_handle: data.instagram_handle || "",
+          facebook_handle: data.facebook_handle || "",
+          twitter_handle: data.twitter_handle || "",
+          cv_exhibitions: data.cv_exhibitions || "",
+          upcoming_events: data.upcoming_events || "",
+        });
+      }
     } catch (error: any) {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile data");
@@ -87,22 +89,12 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update database
-      const { data: existing } = await supabase
+      // Update database using upsert
+      const { error: upsertError } = await supabase
         .from("artist_settings")
-        .select("id")
-        .maybeSingle();
+        .upsert({ avatar_url: publicUrl }, { onConflict: 'id' });
 
-      if (!existing) {
-        throw new Error("Settings not found");
-      }
-
-      const { error: updateError } = await supabase
-        .from("artist_settings")
-        .update({ avatar_url: publicUrl })
-        .eq("id", existing.id);
-
-      if (updateError) throw updateError;
+      if (upsertError) throw upsertError;
 
       // Update parent component
       onAvatarUpdate(publicUrl);
@@ -121,18 +113,10 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     setLoading(true);
 
     try {
-      const { data: existing } = await supabase
-        .from("artist_settings")
-        .select("id")
-        .single();
-
-      if (!existing) {
-        throw new Error("Settings not found");
-      }
-
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from("artist_settings")
-        .update({
+        .upsert({
           contact_email: formData.contact_email,
           phone_number: formData.phone_number,
           instagram_handle: formData.instagram_handle,
@@ -140,8 +124,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
           twitter_handle: formData.twitter_handle,
           cv_exhibitions: formData.cv_exhibitions,
           upcoming_events: formData.upcoming_events,
-        })
-        .eq("id", existing.id);
+        }, { onConflict: 'id' });
 
       if (error) throw error;
 
