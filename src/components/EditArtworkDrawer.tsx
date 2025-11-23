@@ -60,6 +60,7 @@ export const EditArtworkDrawer = ({
   const [uploading, setUploading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
+  const [galleryHasChanges, setGalleryHasChanges] = useState(false);
   
   // Function to check if dimensions contain unit keywords
   const checkForUnits = (text: string): boolean => {
@@ -95,6 +96,7 @@ export const EditArtworkDrawer = ({
       location: artwork.location || "",
       provenance_log: artwork.provenance_log || "",
     });
+    setGalleryHasChanges(false);
   }, [artwork.id]);
 
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,7 +279,8 @@ export const EditArtworkDrawer = ({
     formData.depth !== (artwork.depth?.toString() || "") ||
     formData.medium !== (artwork.medium || "") ||
     formData.location !== (artwork.location || "") ||
-    formData.provenance_log !== (artwork.provenance_log || "");
+    formData.provenance_log !== (artwork.provenance_log || "") ||
+    galleryHasChanges;
 
   return (
     <>
@@ -518,7 +521,10 @@ export const EditArtworkDrawer = ({
               <p className="text-sm text-muted-foreground mb-2">
                 Add multiple images to showcase different angles and details
               </p>
-              <GalleryManager artworkId={artwork.id} />
+              <GalleryManager 
+                artworkId={artwork.id} 
+                onContentChange={() => setGalleryHasChanges(true)}
+              />
             </div>
 
             <DrawerFooter className="px-0 pb-4">
