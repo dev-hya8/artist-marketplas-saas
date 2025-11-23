@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -45,18 +46,16 @@ export const AddArtworkDrawer = ({
   const [formData, setFormData] = useState({
     title: "",
     image_url: "",
-    price: "",
-    base_currency: "USD",
-    status: "Available" as ArtworkStatus,
+    creation_year: "",
+    medium: "",
     dimensions: "",
     dimension_unit: "in",
     depth: "",
-    medium: "",
+    status: "Available" as ArtworkStatus,
+    price: "",
+    base_currency: "USD",
     location: "",
-    sale_type: "fixed" as "fixed" | "auction",
-    auction_end_time: "",
-    starting_bid: "",
-    min_bid_increment: "100",
+    provenance_log: "",
   });
 
   // Fetch default unit from artist settings
@@ -82,12 +81,8 @@ export const AddArtworkDrawer = ({
   };
   const [errors, setErrors] = useState({
     image_url: false,
-    price: false,
     dimensions: false,
     medium: false,
-    location: false,
-    auction_end_time: false,
-    starting_bid: false,
   });
   const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
 
@@ -179,12 +174,8 @@ export const AddArtworkDrawer = ({
     // Validate required fields
     const newErrors = {
       image_url: !formData.image_url,
-      price: formData.sale_type === "fixed" ? !formData.price : false,
       dimensions: !formData.dimensions,
       medium: !formData.medium,
-      location: !formData.location,
-      auction_end_time: formData.sale_type === "auction" ? !formData.auction_end_time : false,
-      starting_bid: formData.sale_type === "auction" ? !formData.starting_bid : false,
     };
 
     setErrors(newErrors);
@@ -193,12 +184,8 @@ export const AddArtworkDrawer = ({
     if (Object.values(newErrors).some(error => error)) {
       const errorMessages = [];
       if (newErrors.image_url) errorMessages.push("Image is required");
-      if (newErrors.price) errorMessages.push("Price is required for Fixed Price items");
       if (newErrors.dimensions) errorMessages.push("Dimensions are required");
       if (newErrors.medium) errorMessages.push("Medium is required");
-      if (newErrors.location) errorMessages.push("Location is required");
-      if (newErrors.auction_end_time) errorMessages.push("Auction End Time is required for auctions");
-      if (newErrors.starting_bid) errorMessages.push("Starting Bid is required for auctions");
       
       const errorMessage = errorMessages.join("\n");
       window.alert("Validation Failed:\n\n" + errorMessage);
@@ -214,33 +201,19 @@ export const AddArtworkDrawer = ({
     setLoading(true);
 
     try {
-      // Convert datetime-local to ISO string for database
-      let auctionEndTimeISO = null;
-      if (formData.sale_type === "auction" && formData.auction_end_time) {
-        try {
-          auctionEndTimeISO = new Date(formData.auction_end_time).toISOString();
-        } catch (dateError) {
-          console.error('Date conversion error:', dateError);
-          window.alert("Invalid auction end time format: " + dateError);
-          throw new Error("Invalid auction end time format");
-        }
-      }
-
       const { error } = await supabase.from("artworks").insert({
         title: formData.title,
         image_url: formData.image_url || null,
-        price: formData.sale_type === "fixed" && formData.price ? parseFloat(formData.price) : null,
-        base_currency: formData.base_currency,
-        status: formData.status,
+        creation_year: formData.creation_year ? parseInt(formData.creation_year) : null,
+        medium: formData.medium || null,
         dimensions: formData.dimensions || null,
         dimension_unit: formData.dimension_unit,
         depth: formData.depth ? parseFloat(formData.depth) : null,
-        medium: formData.medium || null,
+        status: formData.status,
+        price: formData.price ? parseFloat(formData.price) : null,
+        base_currency: formData.base_currency,
         location: formData.location || null,
-        sale_type: formData.sale_type,
-        auction_end_time: auctionEndTimeISO,
-        current_bid: formData.sale_type === "auction" && formData.starting_bid ? parseFloat(formData.starting_bid) : null,
-        min_bid_increment: formData.sale_type === "auction" && formData.min_bid_increment ? parseFloat(formData.min_bid_increment) : 100,
+        provenance_log: formData.provenance_log || null,
       });
 
       if (error) {
@@ -257,28 +230,22 @@ export const AddArtworkDrawer = ({
       setFormData({
         title: "",
         image_url: "",
-        price: "",
-        base_currency: "USD",
-        status: "Available",
+        creation_year: "",
+        medium: "",
         dimensions: "",
         dimension_unit: "in",
         depth: "",
-        medium: "",
+        status: "Available",
+        price: "",
+        base_currency: "USD",
         location: "",
-        sale_type: "fixed",
-        auction_end_time: "",
-        starting_bid: "",
-        min_bid_increment: "100",
+        provenance_log: "",
       });
       setImagePreview(null);
       setErrors({
         image_url: false,
-        price: false,
         dimensions: false,
         medium: false,
-        location: false,
-        auction_end_time: false,
-        starting_bid: false,
       });
       
       onSuccess();
@@ -302,17 +269,8 @@ export const AddArtworkDrawer = ({
           <DrawerTitle>Add New Artwork</DrawerTitle>
           <DrawerDescription>Fill in the details for your new artwork</DrawerDescription>
         </DrawerHeader>
-        <form onSubmit={handleSubmit} className="px-4 space-y-4 max-h-[60vh] overflow-y-auto">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              required
-            />
-          </div>
-
+        <form onSubmit={handleSubmit} className="px-4 space-y-6 max-h-[60vh] overflow-y-auto">
+          {/* MAIN IMAGE UPLOAD */}
           <div className="space-y-2">
             <Label htmlFor="image">Artwork Image *</Label>
             <Input
@@ -345,25 +303,127 @@ export const AddArtworkDrawer = ({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sale_type">Sale Type</Label>
+          {/* SECTION 1: THE OBJECT (TOMBSTONE DATA) */}
+          <div className="space-y-4 pt-2 border-t">
+            <h3 className="text-sm font-semibold text-muted-foreground">Artwork Details</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="creation_year">Creation Year</Label>
+              <Input
+                id="creation_year"
+                type="number"
+                min="1000"
+                max="2100"
+                placeholder="e.g., 2024"
+                value={formData.creation_year}
+                onChange={(e) => setFormData({ ...formData, creation_year: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="medium">Medium *</Label>
+              <Input
+                id="medium"
+                placeholder="e.g., Oil on canvas"
+                value={formData.medium}
+                onChange={(e) => {
+                  setFormData({ ...formData, medium: e.target.value });
+                  setErrors({ ...errors, medium: false });
+                }}
+                className={errors.medium ? "border-destructive" : ""}
+              />
+              {errors.medium && (
+                <p className="text-sm text-destructive">Medium is required</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dimensions">Dimensions (H x W) *</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="dimensions"
+                  placeholder="e.g. 24 x 36 (Enter numbers only)"
+                  value={formData.dimensions}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, dimensions: value });
+                    setErrors({ ...errors, dimensions: false });
+                    setDimensionUnitWarning(checkForUnits(value));
+                  }}
+                  className={`flex-1 ${errors.dimensions ? "border-destructive" : ""}`}
+                />
+                <Select
+                  value={formData.dimension_unit}
+                  onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
+                >
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cm">cm</SelectItem>
+                    <SelectItem value="in">in</SelectItem>
+                    <SelectItem value="ft">ft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {dimensionUnitWarning && (
+                <p className="text-sm text-amber-600 dark:text-amber-500">
+                  ⚠️ Please select the unit from the dropdown instead of typing it.
+                </p>
+              )}
+              {errors.dimensions && (
+                <p className="text-sm text-destructive">Dimensions are required</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="depth">Depth (optional)</Label>
+              <Input
+                id="depth"
+                type="number"
+                step="0.01"
+                placeholder="e.g., 2"
+                value={formData.depth}
+                onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
+            </div>
+          </div>
+
+          {/* SECTION 2: COMMERCIAL STATUS */}
+          <div className="space-y-4 pt-2 border-t">
+            <h3 className="text-sm font-semibold text-muted-foreground">Commercial Information</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
             <Select
-              value={formData.sale_type}
-              onValueChange={(value: "fixed" | "auction") => setFormData({ ...formData, sale_type: value })}
+              value={formData.status}
+              onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">Fixed Price</SelectItem>
-                <SelectItem value="auction">Auction</SelectItem>
+                <SelectItem value="Available">Available</SelectItem>
+                <SelectItem value="Sold">Sold</SelectItem>
+                <SelectItem value="On Loan">On Loan</SelectItem>
+                <SelectItem value="Reserved">Reserved</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {formData.sale_type === "fixed" ? (
             <div className="space-y-2">
-              <Label htmlFor="price">Price *</Label>
+              <Label htmlFor="price">Price</Label>
               <div className="flex gap-2">
                 <Input
                   id="price"
@@ -386,7 +446,6 @@ export const AddArtworkDrawer = ({
                     const value = e.target.value;
                     if (value === '' || /^\d+$/.test(value)) {
                       setFormData({ ...formData, price: value });
-                      setErrors({ ...errors, price: false });
                     }
                   }}
                   onBlur={(e) => {
@@ -400,7 +459,7 @@ export const AddArtworkDrawer = ({
                       });
                     }
                   }}
-                  className={`flex-1 ${errors.price ? "border-destructive" : ""}`}
+                  className="flex-1"
                   style={{
                     appearance: 'textfield',
                     MozAppearance: 'textfield',
@@ -428,170 +487,33 @@ export const AddArtworkDrawer = ({
                   ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
                 </p>
               )}
-              {errors.price && (
-                <p className="text-sm text-destructive">Price is required</p>
-              )}
             </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="starting_bid">Starting Bid (USD) *</Label>
-                <Input
-                  id="starting_bid"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.starting_bid}
-                  onChange={(e) => {
-                    setFormData({ ...formData, starting_bid: e.target.value });
-                    setErrors({ ...errors, starting_bid: false });
-                  }}
-                  className={errors.starting_bid ? "border-destructive" : ""}
-                />
-                {formData.starting_bid && parseFloat(formData.starting_bid) > 0 && currencyCode !== "USD" && (
-                  <p className="text-xs text-muted-foreground">
-                    ≈ {convertPrice(parseFloat(formData.starting_bid))}
-                  </p>
-                )}
-                {errors.starting_bid && (
-                  <p className="text-sm text-destructive">Starting Bid is required</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="auction_end_time">Auction End Time *</Label>
-                <input
-                  id="auction_end_time"
-                  type="datetime-local"
-                  value={formData.auction_end_time}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, auction_end_time: value });
-                    setErrors({ ...errors, auction_end_time: false });
-                  }}
-                  className={`flex h-10 w-full rounded-md border ${errors.auction_end_time ? "border-destructive" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
-                />
-                {errors.auction_end_time && (
-                  <p className="text-sm text-destructive">Auction end time is required for auctions</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="min_bid_increment">Minimum Bid Increment *</Label>
-                <Input
-                  id="min_bid_increment"
-                  type="number"
-                  step="0.01"
-                  placeholder="100"
-                  value={formData.min_bid_increment}
-                  onChange={(e) => setFormData({ ...formData, min_bid_increment: e.target.value })}
-                />
-              </div>
-            </>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Available">Available</SelectItem>
-                <SelectItem value="Sold">Sold</SelectItem>
-                <SelectItem value="On Loan">On Loan</SelectItem>
-                <SelectItem value="Reserved">Reserved</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="dimensions">Dimensions (H x W) *</Label>
-            <div className="flex gap-2">
+          {/* SECTION 3: LOGISTICS & HISTORY */}
+          <div className="space-y-4 pt-2 border-t">
+            <h3 className="text-sm font-semibold text-muted-foreground">Location & Provenance</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
               <Input
-                id="dimensions"
-                placeholder="e.g. 24 x 36 (Enter numbers only)"
-                value={formData.dimensions}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData({ ...formData, dimensions: value });
-                  setErrors({ ...errors, dimensions: false });
-                  setDimensionUnitWarning(checkForUnits(value));
-                }}
-                className={`flex-1 ${errors.dimensions ? "border-destructive" : ""}`}
+                id="location"
+                placeholder="e.g., Studio, Gallery X"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               />
-              <Select
-                value={formData.dimension_unit}
-                onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
-              >
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cm">cm</SelectItem>
-                  <SelectItem value="in">in</SelectItem>
-                  <SelectItem value="ft">ft</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-            {dimensionUnitWarning && (
-              <p className="text-sm text-amber-600 dark:text-amber-500">
-                ⚠️ Please select the unit from the dropdown instead of typing it.
-              </p>
-            )}
-            {errors.dimensions && (
-              <p className="text-sm text-destructive">Dimensions are required</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="depth">Depth (optional)</Label>
-            <Input
-              id="depth"
-              type="number"
-              step="0.01"
-              placeholder="e.g., 2"
-              value={formData.depth}
-              onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="medium">Medium *</Label>
-            <Input
-              id="medium"
-              placeholder="e.g., Oil on canvas"
-              value={formData.medium}
-              onChange={(e) => {
-                setFormData({ ...formData, medium: e.target.value });
-                setErrors({ ...errors, medium: false });
-              }}
-              className={errors.medium ? "border-destructive" : ""}
-            />
-            {errors.medium && (
-              <p className="text-sm text-destructive">Medium is required</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location *</Label>
-            <Input
-              id="location"
-              placeholder="e.g., Studio, Gallery X"
-              value={formData.location}
-              onChange={(e) => {
-                setFormData({ ...formData, location: e.target.value });
-                setErrors({ ...errors, location: false });
-              }}
-              className={errors.location ? "border-destructive" : ""}
-            />
-            {errors.location && (
-              <p className="text-sm text-destructive">Location is required</p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="provenance_log">Provenance Log</Label>
+              <Textarea
+                id="provenance_log"
+                placeholder="History of ownership..."
+                value={formData.provenance_log}
+                onChange={(e) => setFormData({ ...formData, provenance_log: e.target.value })}
+                rows={3}
+              />
+            </div>
           </div>
 
           <DrawerFooter className="px-0 pb-4">
