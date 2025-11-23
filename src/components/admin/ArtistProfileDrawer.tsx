@@ -190,14 +190,6 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               disabled={uploadingAvatar}
             />
             
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.getElementById('profile-avatar-upload')?.click()}
-              disabled={uploadingAvatar}
-            >
-              {uploadingAvatar ? "Uploading..." : "Change Photo"}
-            </Button>
           </div>
         </div>
 
@@ -223,7 +215,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               type="tel"
               value={formData.phone_number}
               onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-              placeholder="+1 (555) 123-4567"
+              placeholder="+639765287844"
             />
           </div>
         </div>
@@ -245,18 +237,6 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="facebook_handle">Facebook</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">facebook.com/</span>
-              <Input
-                id="facebook_handle"
-                value={formData.facebook_handle}
-                onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
-                placeholder="yourpage"
-              />
-            </div>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="twitter_handle">X (Twitter)</Label>
