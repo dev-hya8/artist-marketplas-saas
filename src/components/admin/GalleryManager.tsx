@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface GalleryManagerProps {
   artworkId: string | null;
@@ -25,21 +24,44 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
 
+  const fetchGalleryImages = async () => {
+    if (!artworkId) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("artwork_gallery")
+        .select("*")
+        .eq("artwork_id", artworkId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGalleryImages(data || []);
+    } catch (error: any) {
+      console.error("Error fetching gallery images:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (artworkId) {
       fetchGalleryImages();
     }
   }, [artworkId]);
 
-  // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!lightboxImage) return;
       
-      if (e.key === "ArrowLeft") {
-        handlePreviousImage();
-      } else if (e.key === "ArrowRight") {
-        handleNextImage();
+      if (e.key === "ArrowLeft" && lightboxIndex > 0) {
+        const newIndex = lightboxIndex - 1;
+        setLightboxIndex(newIndex);
+        setLightboxImage(galleryImages[newIndex].image_url);
+      } else if (e.key === "ArrowRight" && lightboxIndex < galleryImages.length - 1) {
+        const newIndex = lightboxIndex + 1;
+        setLightboxIndex(newIndex);
+        setLightboxImage(galleryImages[newIndex].image_url);
       } else if (e.key === "Escape") {
         setLightboxImage(null);
       }
@@ -68,26 +90,6 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const openLightbox = (imageUrl: string, index: number) => {
     setLightboxImage(imageUrl);
     setLightboxIndex(index);
-  };
-
-  const fetchGalleryImages = async () => {
-    if (!artworkId) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("artwork_gallery")
-        .select("*")
-        .eq("artwork_id", artworkId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setGalleryImages(data || []);
-    } catch (error: any) {
-      console.error("Error fetching gallery images:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
