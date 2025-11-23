@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Upload, User, MessageSquare, Settings } from "lucide-react";
+import { Plus, Upload, User, MessageSquare, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -240,11 +240,31 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="inquiries">
-            <InquiriesTab />
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-0 right-0 h-8 w-8"
+                onClick={() => setActiveTab("artworks")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <InquiriesTab />
+            </div>
           </TabsContent>
 
           <TabsContent value="settings">
-            <SettingsTab />
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-0 right-0 h-8 w-8"
+                onClick={() => setActiveTab("artworks")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <SettingsTab />
+            </div>
           </TabsContent>
         </Tabs>
       </main>
