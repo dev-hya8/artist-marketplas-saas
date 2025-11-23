@@ -208,11 +208,13 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         <div className="grid grid-cols-2 gap-4">
           {galleryImages.map((image) => (
             <div key={image.id} className="relative group">
-              <img
-                src={image.image_url}
-                alt="Gallery"
-                className="w-full h-32 object-cover rounded-md border"
-              />
+              <div className="w-full h-32 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+                <img
+                  src={image.image_url}
+                  alt="Gallery"
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
               <Button
                 type="button"
                 variant="destructive"
