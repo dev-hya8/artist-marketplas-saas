@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Camera, Upload, Plus, Trash2, Facebook, Music } from "lucide-react";
+import { User, Camera, Upload, Plus, Trash2 } from "lucide-react";
+import { FaInstagram, FaFacebook, FaXTwitter, FaTiktok } from "react-icons/fa6";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +16,11 @@ interface ArtistProfileDrawerProps {
 }
 
 export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpdate }: ArtistProfileDrawerProps) => {
+  interface EventItem {
+    title: string;
+    date: string;
+  }
+
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [artistSettingsId, setArtistSettingsId] = useState<string | null>(null);
@@ -25,8 +31,8 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     facebook_handle: "",
     twitter_handle: "",
     tiktok_handle: "",
-    cv_exhibitions: [] as string[],
-    upcoming_events: [] as string[],
+    cv_exhibitions: [] as EventItem[],
+    upcoming_events: [] as EventItem[],
   });
 
   useEffect(() => {
@@ -48,28 +54,46 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
       if (data) {
         setArtistSettingsId(data.id);
         
-        // Parse exhibitions and events from JSON or text
-        let exhibitions: string[] = [];
-        let events: string[] = [];
+        // Parse exhibitions and events from JSON
+        let exhibitions: EventItem[] = [];
+        let events: EventItem[] = [];
         
         try {
           if (data.cv_exhibitions) {
-            exhibitions = typeof data.cv_exhibitions === 'string' 
+            const parsed = typeof data.cv_exhibitions === 'string' 
               ? JSON.parse(data.cv_exhibitions)
               : data.cv_exhibitions;
+            
+            // Handle both old format (string[]) and new format (EventItem[])
+            if (Array.isArray(parsed)) {
+              exhibitions = parsed.map(item => 
+                typeof item === 'string' 
+                  ? { title: item, date: '' }
+                  : item
+              );
+            }
           }
         } catch {
-          exhibitions = data.cv_exhibitions ? [data.cv_exhibitions] : [];
+          exhibitions = [];
         }
         
         try {
           if (data.upcoming_events) {
-            events = typeof data.upcoming_events === 'string'
+            const parsed = typeof data.upcoming_events === 'string'
               ? JSON.parse(data.upcoming_events)
               : data.upcoming_events;
+            
+            // Handle both old format (string[]) and new format (EventItem[])
+            if (Array.isArray(parsed)) {
+              events = parsed.map(item => 
+                typeof item === 'string'
+                  ? { title: item, date: '' }
+                  : item
+              );
+            }
           }
         } catch {
-          events = data.upcoming_events ? [data.upcoming_events] : [];
+          events = [];
         }
         
         setFormData({
@@ -160,8 +184,8 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
         facebook_handle: formData.facebook_handle,
         twitter_handle: formData.twitter_handle,
         tiktok_handle: formData.tiktok_handle,
-        cv_exhibitions: JSON.stringify(formData.cv_exhibitions.filter(e => e.trim())),
-        upcoming_events: JSON.stringify(formData.upcoming_events.filter(e => e.trim())),
+        cv_exhibitions: JSON.stringify(formData.cv_exhibitions.filter(e => e.title.trim())),
+        upcoming_events: JSON.stringify(formData.upcoming_events.filter(e => e.title.trim())),
       };
 
       if (artistSettingsId) {
@@ -190,7 +214,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
   };
 
   const addExhibition = () => {
-    setFormData({ ...formData, cv_exhibitions: [...formData.cv_exhibitions, ""] });
+    setFormData({ ...formData, cv_exhibitions: [...formData.cv_exhibitions, { title: "", date: "" }] });
   };
 
   const removeExhibition = (index: number) => {
@@ -200,14 +224,14 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     });
   };
 
-  const updateExhibition = (index: number, value: string) => {
+  const updateExhibition = (index: number, field: 'title' | 'date', value: string) => {
     const newExhibitions = [...formData.cv_exhibitions];
-    newExhibitions[index] = value;
+    newExhibitions[index] = { ...newExhibitions[index], [field]: value };
     setFormData({ ...formData, cv_exhibitions: newExhibitions });
   };
 
   const addEvent = () => {
-    setFormData({ ...formData, upcoming_events: [...formData.upcoming_events, ""] });
+    setFormData({ ...formData, upcoming_events: [...formData.upcoming_events, { title: "", date: "" }] });
   };
 
   const removeEvent = (index: number) => {
@@ -217,9 +241,9 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     });
   };
 
-  const updateEvent = (index: number, value: string) => {
+  const updateEvent = (index: number, field: 'title' | 'date', value: string) => {
     const newEvents = [...formData.upcoming_events];
-    newEvents[index] = value;
+    newEvents[index] = { ...newEvents[index], [field]: value };
     setFormData({ ...formData, upcoming_events: newEvents });
   };
 
@@ -309,65 +333,63 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
           <h3 className="text-lg font-semibold">Social Media Links</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="instagram_handle">Instagram</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">@</span>
-              <Input
-                id="instagram_handle"
-                value={formData.instagram_handle}
-                onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
-                placeholder="yourusername"
-              />
-            </div>
+            <Label htmlFor="instagram_handle">
+              <div className="flex items-center gap-2">
+                <FaInstagram className="h-4 w-4" />
+                Instagram
+              </div>
+            </Label>
+            <Input
+              id="instagram_handle"
+              value={formData.instagram_handle}
+              onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+              placeholder="@yourusername or full URL"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="facebook_handle">
               <div className="flex items-center gap-2">
-                <Facebook className="h-4 w-4" />
+                <FaFacebook className="h-4 w-4" />
                 Facebook
               </div>
             </Label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">facebook.com/</span>
-              <Input
-                id="facebook_handle"
-                value={formData.facebook_handle}
-                onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
-                placeholder="yourpage"
-              />
-            </div>
+            <Input
+              id="facebook_handle"
+              value={formData.facebook_handle}
+              onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
+              placeholder="facebook.com/yourpage or @yourpage"
+            />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="twitter_handle">X (Twitter)</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">@</span>
-              <Input
-                id="twitter_handle"
-                value={formData.twitter_handle}
-                onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
-                placeholder="yourusername"
-              />
-            </div>
+            <Label htmlFor="twitter_handle">
+              <div className="flex items-center gap-2">
+                <FaXTwitter className="h-4 w-4" />
+                X (Twitter)
+              </div>
+            </Label>
+            <Input
+              id="twitter_handle"
+              value={formData.twitter_handle}
+              onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
+              placeholder="@yourusername or full URL"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="tiktok_handle">
               <div className="flex items-center gap-2">
-                <Music className="h-4 w-4" />
+                <FaTiktok className="h-4 w-4" />
                 TikTok
               </div>
             </Label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">@</span>
-              <Input
-                id="tiktok_handle"
-                value={formData.tiktok_handle}
-                onChange={(e) => setFormData({ ...formData, tiktok_handle: e.target.value })}
-                placeholder="yourusername"
-              />
-            </div>
+            <Input
+              id="tiktok_handle"
+              value={formData.tiktok_handle}
+              onChange={(e) => setFormData({ ...formData, tiktok_handle: e.target.value })}
+              placeholder="@yourusername or full URL"
+            />
           </div>
         </div>
 
@@ -381,9 +403,16 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               {formData.cv_exhibitions.map((exhibition, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
-                    value={exhibition}
-                    onChange={(e) => updateExhibition(index, e.target.value)}
-                    placeholder="Enter exhibition"
+                    value={exhibition.title}
+                    onChange={(e) => updateExhibition(index, 'title', e.target.value)}
+                    placeholder="Exhibition name"
+                    className="flex-1"
+                  />
+                  <Input
+                    value={exhibition.date}
+                    onChange={(e) => updateExhibition(index, 'date', e.target.value)}
+                    placeholder="Year/Date"
+                    className="w-32"
                   />
                   <Button
                     type="button"
@@ -420,9 +449,16 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               {formData.upcoming_events.map((event, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
-                    value={event}
-                    onChange={(e) => updateEvent(index, e.target.value)}
-                    placeholder="Enter event"
+                    value={event.title}
+                    onChange={(e) => updateEvent(index, 'title', e.target.value)}
+                    placeholder="Event name"
+                    className="flex-1"
+                  />
+                  <Input
+                    value={event.date}
+                    onChange={(e) => updateEvent(index, 'date', e.target.value)}
+                    placeholder="Year/Date"
+                    className="w-32"
                   />
                   <Button
                     type="button"
