@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
-import { Trash2 } from "lucide-react";
+import { Trash2, Crop } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -45,6 +46,9 @@ export const AddArtworkDrawer = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
   const [distinctLocations, setDistinctLocations] = useState<string[]>([]);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     image_url: "",
@@ -130,22 +134,33 @@ export const AddArtworkDrawer = ({
       return;
     }
 
-    // Show preview immediately
+    // Create preview URL and open cropper
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result as string);
+      setTempImageUrl(reader.result as string);
+      setCropperOpen(true);
     };
     reader.readAsDataURL(file);
 
+    e.target.value = ""; // Reset file input
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCroppedBlob(croppedBlob);
+    
+    // Create preview URL for the cropped image
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setImagePreview(previewUrl);
+
+    // Upload the cropped image
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
       const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
-        .upload(filePath, file);
+        .upload(filePath, croppedBlob);
 
       if (uploadError) throw uploadError;
 
@@ -169,6 +184,13 @@ export const AddArtworkDrawer = ({
       setImagePreview(null);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRecrop = () => {
+    if (imagePreview) {
+      setTempImageUrl(imagePreview);
+      setCropperOpen(true);
     }
   };
 
@@ -314,13 +336,24 @@ export const AddArtworkDrawer = ({
                   alt="Preview"
                   className="w-full h-48 object-cover rounded-md border"
                 />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
-                >
-                  <Trash2 className="w-4 h-4 text-red-500" />
-                </button>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRecrop}
+                    className="p-1.5 bg-white/80 rounded-full hover:bg-blue-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    title="Recrop image"
+                  >
+                    <Crop className="w-4 h-4 text-blue-500" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    title="Remove image"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -560,6 +593,16 @@ export const AddArtworkDrawer = ({
           </DrawerFooter>
         </form>
       </DrawerContent>
+
+      {/* Image Cropper Dialog */}
+      {tempImageUrl && (
+        <ImageCropperDialog
+          open={cropperOpen}
+          onOpenChange={setCropperOpen}
+          imageUrl={tempImageUrl}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </Drawer>
   );
 };

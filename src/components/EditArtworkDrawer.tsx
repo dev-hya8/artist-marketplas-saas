@@ -31,8 +31,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload } from "lucide-react";
+import { Trash2, Upload, Crop } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
+import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
@@ -63,6 +64,9 @@ export const EditArtworkDrawer = ({
   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
   const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
   const [distinctLocations, setDistinctLocations] = useState<string[]>([]);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   
   // Function to check if dimensions contain unit keywords
   const checkForUnits = (text: string): boolean => {
@@ -138,15 +142,28 @@ export const EditArtworkDrawer = ({
       return;
     }
 
+    // Create preview URL and open cropper
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTempImageUrl(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+
+    e.target.value = ""; // Reset file input
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCroppedBlob(croppedBlob);
     setUploading(true);
+
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
       const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
-        .upload(filePath, file);
+        .upload(filePath, croppedBlob);
 
       if (uploadError) throw uploadError;
 
@@ -178,8 +195,6 @@ export const EditArtworkDrawer = ({
         title: "Success",
         description: "Thumbnail updated successfully",
       });
-
-      e.target.value = "";
     } catch (error: any) {
       console.error("Thumbnail upload error:", error);
       toast({
@@ -189,6 +204,13 @@ export const EditArtworkDrawer = ({
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRecrop = () => {
+    if (formData.image_url) {
+      setTempImageUrl(formData.image_url);
+      setCropperOpen(true);
     }
   };
 
@@ -328,15 +350,25 @@ export const EditArtworkDrawer = ({
                     alt={formData.title}
                     className="w-full h-full object-contain"
                   />
-                  {/* Added Remove Button for Main Thumbnail */}
-                  <button
-                    type="button"
-                    onClick={handleRemoveThumbnail}
-                    className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    title="Remove Thumbnail"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+                  {/* Added Remove and Recrop Buttons for Main Thumbnail */}
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRecrop}
+                      className="p-1.5 bg-white/80 rounded-full hover:bg-blue-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      title="Recrop Thumbnail"
+                    >
+                      <Crop className="w-4 h-4 text-blue-500" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveThumbnail}
+                      className="p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      title="Remove Thumbnail"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
                 </div>
               )}
               
@@ -636,6 +668,16 @@ export const EditArtworkDrawer = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Cropper Dialog */}
+      {tempImageUrl && (
+        <ImageCropperDialog
+          open={cropperOpen}
+          onOpenChange={setCropperOpen}
+          imageUrl={tempImageUrl}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </>
   );
 };
