@@ -34,6 +34,7 @@ export type Database = {
           phone_number: string | null
           primary_contact_method: string | null
           public_profile_enabled: boolean | null
+          tiktok_handle: string | null
           twitter_handle: string | null
           upcoming_events: string | null
           updated_at: string | null
@@ -57,6 +58,7 @@ export type Database = {
           phone_number?: string | null
           primary_contact_method?: string | null
           public_profile_enabled?: boolean | null
+          tiktok_handle?: string | null
           twitter_handle?: string | null
           upcoming_events?: string | null
           updated_at?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           phone_number?: string | null
           primary_contact_method?: string | null
           public_profile_enabled?: boolean | null
+          tiktok_handle?: string | null
           twitter_handle?: string | null
           upcoming_events?: string | null
           updated_at?: string | null
