@@ -66,13 +66,21 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
         </div>
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">
-            <p className="text-base md:text-xl font-bold">
-              {artwork.price ? convertPrice(Number(artwork.price), artwork.base_currency || "USD") : "N/A"}
-            </p>
-            {artwork.price && !isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
-              <p className="text-xs text-muted-foreground">
-                {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
-              </p>
+            {artwork.price ? (
+              <>
+                {/* Main Price: User's Preferred Currency */}
+                <p className="text-base md:text-xl font-bold">
+                  {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
+                </p>
+                {/* Sub Text: Original Listed Price (if different) */}
+                {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
+                  <p className="text-xs text-muted-foreground">
+                    Listed as {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-base md:text-xl font-bold">N/A</p>
             )}
           </div>
           <Badge className={`${statusColors[artwork.status]} px-2 py-0.5 md:px-3 md:py-1 text-xs md:text-sm font-medium shrink-0`}>{artwork.status}</Badge>
