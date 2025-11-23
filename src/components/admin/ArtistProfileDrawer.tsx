@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
 import { User, Camera, Upload } from "lucide-react";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -162,178 +156,174 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Artist Profile
-          </DrawerTitle>
-        </DrawerHeader>
-        
-        <div className="overflow-y-auto px-4 pb-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Avatar Upload Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Profile Photo</h3>
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative group">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
-                    {avatarUrl ? (
-                      <img 
-                        src={avatarUrl} 
-                        alt="Profile photo" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-16 w-16 text-muted-foreground" />
-                    )}
-                  </div>
-                  
-                  {/* Camera Icon Overlay */}
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('profile-avatar-upload')?.click()}
-                    disabled={uploadingAvatar}
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {uploadingAvatar ? (
-                      <Upload className="h-8 w-8 text-white animate-pulse" />
-                    ) : (
-                      <Camera className="h-8 w-8 text-white" />
-                    )}
-                  </button>
-                </div>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                  id="profile-avatar-upload"
-                  disabled={uploadingAvatar}
-                />
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('profile-avatar-upload')?.click()}
-                  disabled={uploadingAvatar}
-                >
-                  {uploadingAvatar ? "Uploading..." : "Change Photo"}
-                </Button>
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Contact Information</h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="contact_email">Email</Label>
-                <Input
-                  id="contact_email"
-                  type="email"
-                  value={formData.contact_email}
-                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">Phone Number</Label>
-                <Input
-                  id="phone_number"
-                  type="tel"
-                  value={formData.phone_number}
-                  onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-            </div>
-
-            {/* Social Media Links */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Social Media Links</h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="instagram_handle">Instagram</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">@</span>
-                  <Input
-                    id="instagram_handle"
-                    value={formData.instagram_handle}
-                    onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
-                    placeholder="yourusername"
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <User className="h-6 w-6" />
+          Artist Profile
+        </h2>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Avatar Upload Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Profile Photo</h3>
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                {avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt="Profile photo" 
+                    className="w-full h-full object-cover"
                   />
-                </div>
+                ) : (
+                  <User className="h-16 w-16 text-muted-foreground" />
+                )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="facebook_handle">Facebook</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">facebook.com/</span>
-                  <Input
-                    id="facebook_handle"
-                    value={formData.facebook_handle}
-                    onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
-                    placeholder="yourpage"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="twitter_handle">X (Twitter)</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">@</span>
-                  <Input
-                    id="twitter_handle"
-                    value={formData.twitter_handle}
-                    onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
-                    placeholder="yourusername"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* CV / Exhibitions */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">CV / Exhibitions</h3>
               
-              <div className="space-y-2">
-                <Label htmlFor="cv_exhibitions">Exhibitions</Label>
-                <Textarea
-                  id="cv_exhibitions"
-                  value={formData.cv_exhibitions}
-                  onChange={(e) => setFormData({ ...formData, cv_exhibitions: e.target.value })}
-                  placeholder="List your exhibitions, one per line..."
-                  rows={6}
-                />
-              </div>
+              {/* Camera Icon Overlay */}
+              <button
+                type="button"
+                onClick={() => document.getElementById('profile-avatar-upload')?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+              >
+                {uploadingAvatar ? (
+                  <Upload className="h-8 w-8 text-white animate-pulse" />
+                ) : (
+                  <Camera className="h-8 w-8 text-white" />
+                )}
+              </button>
             </div>
 
-            {/* Upcoming Art Events */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Upcoming Art Events</h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="upcoming_events">Events</Label>
-                <Textarea
-                  id="upcoming_events"
-                  value={formData.upcoming_events}
-                  onChange={(e) => setFormData({ ...formData, upcoming_events: e.target.value })}
-                  placeholder="List your upcoming events, one per line..."
-                  rows={6}
-                />
-              </div>
-            </div>
-
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Saving..." : "Save Profile"}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              id="profile-avatar-upload"
+              disabled={uploadingAvatar}
+            />
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById('profile-avatar-upload')?.click()}
+              disabled={uploadingAvatar}
+            >
+              {uploadingAvatar ? "Uploading..." : "Change Photo"}
             </Button>
-          </form>
+          </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+
+        {/* Contact Info */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Contact Information</h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="contact_email">Email</Label>
+            <Input
+              id="contact_email"
+              type="email"
+              value={formData.contact_email}
+              onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+              placeholder="your@email.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone_number">Phone Number</Label>
+            <Input
+              id="phone_number"
+              type="tel"
+              value={formData.phone_number}
+              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+              placeholder="+1 (555) 123-4567"
+            />
+          </div>
+        </div>
+
+        {/* Social Media Links */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Social Media Links</h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="instagram_handle">Instagram</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">@</span>
+              <Input
+                id="instagram_handle"
+                value={formData.instagram_handle}
+                onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                placeholder="yourusername"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="facebook_handle">Facebook</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-sm">facebook.com/</span>
+              <Input
+                id="facebook_handle"
+                value={formData.facebook_handle}
+                onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
+                placeholder="yourpage"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="twitter_handle">X (Twitter)</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">@</span>
+              <Input
+                id="twitter_handle"
+                value={formData.twitter_handle}
+                onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
+                placeholder="yourusername"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* CV / Exhibitions */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">CV / Exhibitions</h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="cv_exhibitions">Exhibitions</Label>
+            <Textarea
+              id="cv_exhibitions"
+              value={formData.cv_exhibitions}
+              onChange={(e) => setFormData({ ...formData, cv_exhibitions: e.target.value })}
+              placeholder="List your exhibitions, one per line..."
+              rows={6}
+            />
+          </div>
+        </div>
+
+        {/* Upcoming Art Events */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Upcoming Art Events</h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="upcoming_events">Events</Label>
+            <Textarea
+              id="upcoming_events"
+              value={formData.upcoming_events}
+              onChange={(e) => setFormData({ ...formData, upcoming_events: e.target.value })}
+              placeholder="List your upcoming events, one per line..."
+              rows={6}
+            />
+          </div>
+        </div>
+
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? "Saving..." : "Save Profile"}
+        </Button>
+      </form>
+    </div>
   );
 };
