@@ -104,7 +104,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     }
     
     const toCurrencyInfo = CURRENCIES.find(c => c.code === currencyCode);
-    const toSymbol = toCurrencyInfo?.symbol || "$";
+const toSymbol = toCurrencyInfo?.symbol || "$";
     
     if (currencyCode === fromCurrency) {
       return `${toSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
