@@ -23,7 +23,6 @@ const Index = () => {
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("artworks");
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
@@ -43,62 +42,6 @@ const Index = () => {
       }
     } catch (error) {
       console.error("Error fetching artist avatar:", error);
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (2MB limit for avatars)
-    const maxSize = 2 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({ description: "File too large. Please select an image smaller than 2MB", variant: "destructive" });
-      e.target.value = "";
-      return;
-    }
-
-    setUploadingAvatar(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `avatar-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = fileName;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update database
-      const { data: existing } = await supabase
-        .from("artist_settings")
-        .select("id")
-        .maybeSingle();
-
-      if (!existing) {
-        throw new Error("Settings not found");
-      }
-
-      const { error: updateError } = await supabase
-        .from("artist_settings")
-        .update({ avatar_url: publicUrl })
-        .eq("id", existing.id);
-
-      if (updateError) throw updateError;
-
-      setAvatarUrl(publicUrl);
-      toast({ description: "Avatar updated successfully!" });
-    } catch (error: any) {
-      console.error("Avatar upload error:", error);
-      toast({ description: error.message || "Failed to upload avatar", variant: "destructive" });
-    } finally {
-      setUploadingAvatar(false);
-      e.target.value = "";
     }
   };
 
@@ -132,35 +75,21 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 
-              className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
-              onClick={() => setActiveTab("artworks")}
-            >
-              Artist Dashboard
-            </h1>
-            
-            <div className="flex items-center gap-2">
-              {/* Avatar Upload */}
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                  id="avatar-upload"
-                  disabled={uploadingAvatar}
-                />
+            <div className="flex items-center justify-between">
+              <h1 
+                className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
+                onClick={() => setActiveTab("artworks")}
+              >
+                Artist Dashboard
+              </h1>
+              
+              <div className="flex items-center gap-2">
+                {/* Profile Avatar - Opens Drawer */}
                 <Button 
                   variant={profileDrawerOpen ? "default" : "outline"}
                   size="icon"
                   className="relative h-10 w-10"
-                  disabled={uploadingAvatar}
                   onClick={() => setProfileDrawerOpen(true)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    document.getElementById('avatar-upload')?.click();
-                  }}
                 >
                   {avatarUrl ? (
                     <img 
@@ -171,15 +100,9 @@ const Index = () => {
                   ) : (
                     <User className="h-5 w-5" />
                   )}
-                  {uploadingAvatar && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded">
-                      <Upload className="h-4 w-4 animate-pulse" />
-                    </div>
-                  )}
                 </Button>
-              </div>
 
-              {/* Message/Inquiries Icon */}
+                {/* Message/Inquiries Icon */}
               <Button
                 variant={activeTab === "inquiries" ? "default" : "outline"}
                 size="icon"
@@ -297,6 +220,8 @@ const Index = () => {
       <ArtistProfileDrawer
         open={profileDrawerOpen}
         onOpenChange={setProfileDrawerOpen}
+        avatarUrl={avatarUrl}
+        onAvatarUpdate={setAvatarUrl}
       />
     </div>
   );
