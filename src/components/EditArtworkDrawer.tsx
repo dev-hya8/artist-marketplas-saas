@@ -325,7 +325,7 @@ export const EditArtworkDrawer = ({
               <Label className="text-base font-semibold">Main Thumbnail</Label>
               
               {formData.image_url && (
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted">
+                <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted">
                   <img 
                     src={formData.image_url} 
                     alt={formData.title}
