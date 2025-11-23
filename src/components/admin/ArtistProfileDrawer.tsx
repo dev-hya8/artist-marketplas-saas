@@ -343,7 +343,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               id="instagram_handle"
               value={formData.instagram_handle}
               onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
-              placeholder="@yourusername or full URL"
+              placeholder="Username or Full URL"
             />
           </div>
 
@@ -358,7 +358,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               id="facebook_handle"
               value={formData.facebook_handle}
               onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
-              placeholder="facebook.com/yourpage or @yourpage"
+              placeholder="Username or Full URL"
             />
           </div>
 
@@ -373,7 +373,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               id="twitter_handle"
               value={formData.twitter_handle}
               onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
-              placeholder="@yourusername or full URL"
+              placeholder="Username or Full URL"
             />
           </div>
 
@@ -388,7 +388,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               id="tiktok_handle"
               value={formData.tiktok_handle}
               onChange={(e) => setFormData({ ...formData, tiktok_handle: e.target.value })}
-              placeholder="@yourusername or full URL"
+              placeholder="Username or Full URL"
             />
           </div>
         </div>
