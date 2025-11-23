@@ -41,17 +41,25 @@ export const ImageCropperDialog = ({
 
   const onCropCompleteCallback = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
+      console.log("Crop complete callback fired:", croppedAreaPixels);
       setCroppedAreaPixels(croppedAreaPixels);
     },
     []
   );
 
   const createCroppedImage = async () => {
-    if (!croppedAreaPixels) return;
+    console.log("Apply Crop clicked. croppedAreaPixels:", croppedAreaPixels);
+    
+    if (!croppedAreaPixels) {
+      console.error("No cropped area pixels available");
+      return;
+    }
 
     setIsProcessing(true);
     try {
       const image = await createImage(imageUrl);
+      console.log("Image loaded:", image.width, "x", image.height);
+      
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
@@ -62,6 +70,9 @@ export const ImageCropperDialog = ({
       // Set canvas size to the cropped area
       canvas.width = croppedAreaPixels.width;
       canvas.height = croppedAreaPixels.height;
+
+      console.log("Canvas created:", canvas.width, "x", canvas.height);
+      console.log("Crop area:", croppedAreaPixels);
 
       // Draw the cropped image
       ctx.drawImage(
@@ -76,12 +87,17 @@ export const ImageCropperDialog = ({
         croppedAreaPixels.height
       );
 
+      console.log("Image drawn to canvas");
+
       // Convert canvas to blob
       canvas.toBlob(
         (blob) => {
           if (blob) {
+            console.log("Blob created:", blob.size, "bytes");
             onCropComplete(blob);
             onOpenChange(false);
+          } else {
+            console.error("Failed to create blob");
           }
           setIsProcessing(false);
         },
@@ -140,11 +156,20 @@ export const ImageCropperDialog = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={isProcessing}>
+        <DialogFooter className="z-50">
+          <Button 
+            type="button"
+            variant="outline" 
+            onClick={handleCancel} 
+            disabled={isProcessing}
+          >
             Cancel
           </Button>
-          <Button onClick={createCroppedImage} disabled={isProcessing}>
+          <Button 
+            type="button"
+            onClick={createCroppedImage} 
+            disabled={isProcessing || !croppedAreaPixels}
+          >
             {isProcessing ? "Processing..." : "Apply Crop"}
           </Button>
         </DialogFooter>
@@ -159,5 +184,7 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
     const image = new Image();
     image.addEventListener("load", () => resolve(image));
     image.addEventListener("error", (error) => reject(error));
+    // Enable CORS for data URLs and external images
+    image.setAttribute("crossOrigin", "anonymous");
     image.src = url;
   });
