@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Drawer,
@@ -48,6 +48,7 @@ export const AddArtworkDrawer = ({
     base_currency: "USD",
     status: "Available" as ArtworkStatus,
     dimensions: "",
+    dimension_unit: "in",
     depth: "",
     medium: "",
     location: "",
@@ -56,6 +57,28 @@ export const AddArtworkDrawer = ({
     starting_bid: "",
     min_bid_increment: "100",
   });
+
+  // Fetch default unit from artist settings
+  useEffect(() => {
+    fetchDefaultUnit();
+  }, [open]);
+
+  const fetchDefaultUnit = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("artist_settings")
+        .select("measurement_unit")
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data && data.measurement_unit) {
+        setFormData(prev => ({ ...prev, dimension_unit: data.measurement_unit }));
+      }
+    } catch (error) {
+      console.error("Error fetching default unit:", error);
+    }
+  };
   const [errors, setErrors] = useState({
     image_url: false,
     price: false,
@@ -206,6 +229,7 @@ export const AddArtworkDrawer = ({
         base_currency: formData.base_currency,
         status: formData.status,
         dimensions: formData.dimensions || null,
+        dimension_unit: formData.dimension_unit,
         depth: formData.depth ? parseFloat(formData.depth) : null,
         medium: formData.medium || null,
         location: formData.location || null,
@@ -233,6 +257,7 @@ export const AddArtworkDrawer = ({
         base_currency: "USD",
         status: "Available",
         dimensions: "",
+        dimension_unit: "in",
         depth: "",
         medium: "",
         location: "",
@@ -457,16 +482,31 @@ export const AddArtworkDrawer = ({
 
           <div className="space-y-2">
             <Label htmlFor="dimensions">Dimensions (H x W) *</Label>
-            <Input
-              id="dimensions"
-              placeholder="e.g., 24 x 36"
-              value={formData.dimensions}
-              onChange={(e) => {
-                setFormData({ ...formData, dimensions: e.target.value });
-                setErrors({ ...errors, dimensions: false });
-              }}
-              className={errors.dimensions ? "border-destructive" : ""}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="dimensions"
+                placeholder="e.g., 24 x 36"
+                value={formData.dimensions}
+                onChange={(e) => {
+                  setFormData({ ...formData, dimensions: e.target.value });
+                  setErrors({ ...errors, dimensions: false });
+                }}
+                className={`flex-1 ${errors.dimensions ? "border-destructive" : ""}`}
+              />
+              <Select
+                value={formData.dimension_unit}
+                onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cm">cm</SelectItem>
+                  <SelectItem value="in">in</SelectItem>
+                  <SelectItem value="ft">ft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {errors.dimensions && (
               <p className="text-sm text-destructive">Dimensions are required</p>
             )}
