@@ -215,7 +215,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     if (hasUnsavedChanges()) {
       setShowUnsavedDialog(true);
     } else {
-      onOpenChange(false);
+      onOpenChange(true); // Pass true to indicate we want to close
     }
   };
 
@@ -251,7 +251,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
 
       toast.success("Profile updated successfully!");
       setShowUnsavedDialog(false);
-      onOpenChange(false);
+      onOpenChange(true); // Pass true to indicate we want to close
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error(error.message || "Failed to update profile");
@@ -263,7 +263,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
   const handleDiscardAndClose = () => {
     setFormData(JSON.parse(JSON.stringify(initialFormData))); // Reset to initial
     setShowUnsavedDialog(false);
-    onOpenChange(false);
+    onOpenChange(true); // Pass true to indicate we want to close
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,6 +342,7 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
             variant="ghost"
             size="icon"
             onClick={handleCloseAttempt}
+            className="z-50"
           >
             <X className="h-5 w-5" />
           </Button>
