@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User } from "lucide-react";
+import { User, Camera, Upload } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -16,10 +16,13 @@ import { toast } from "sonner";
 interface ArtistProfileDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  avatarUrl: string | null;
+  onAvatarUpdate: (url: string) => void;
 }
 
-export const ArtistProfileDrawer = ({ open, onOpenChange }: ArtistProfileDrawerProps) => {
+export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpdate }: ArtistProfileDrawerProps) => {
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
     contact_email: "",
     phone_number: "",
@@ -57,6 +60,65 @@ export const ArtistProfileDrawer = ({ open, onOpenChange }: ArtistProfileDrawerP
     } catch (error: any) {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile data");
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (2MB limit for avatars)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File too large. Please select an image smaller than 2MB");
+      e.target.value = "";
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update database
+      const { data: existing } = await supabase
+        .from("artist_settings")
+        .select("id")
+        .maybeSingle();
+
+      if (!existing) {
+        throw new Error("Settings not found");
+      }
+
+      const { error: updateError } = await supabase
+        .from("artist_settings")
+        .update({ avatar_url: publicUrl })
+        .eq("id", existing.id);
+
+      if (updateError) throw updateError;
+
+      // Update parent component
+      onAvatarUpdate(publicUrl);
+      toast.success("Profile photo updated!");
+    } catch (error: any) {
+      console.error("Avatar upload error:", error);
+      toast.error(error.message || "Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
     }
   };
 
@@ -111,6 +173,58 @@ export const ArtistProfileDrawer = ({ open, onOpenChange }: ArtistProfileDrawerP
         
         <div className="overflow-y-auto px-4 pb-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Avatar Upload Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Profile Photo</h3>
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt="Profile photo" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-16 w-16 text-muted-foreground" />
+                    )}
+                  </div>
+                  
+                  {/* Camera Icon Overlay */}
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('profile-avatar-upload')?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {uploadingAvatar ? (
+                      <Upload className="h-8 w-8 text-white animate-pulse" />
+                    ) : (
+                      <Camera className="h-8 w-8 text-white" />
+                    )}
+                  </button>
+                </div>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  id="profile-avatar-upload"
+                  disabled={uploadingAvatar}
+                />
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('profile-avatar-upload')?.click()}
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar ? "Uploading..." : "Change Photo"}
+                </Button>
+              </div>
+            </div>
+
             {/* Contact Info */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Contact Information</h3>
