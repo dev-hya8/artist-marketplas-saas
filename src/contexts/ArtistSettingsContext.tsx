@@ -14,6 +14,9 @@ interface ArtistSettings {
   facebook_handle: string | null;
   twitter_handle: string | null;
   primary_contact_method: string | null;
+  cv_exhibitions: string | null;
+  cv_education: string | null;
+  cv_awards: string | null;
 }
 
 interface ArtistSettingsContextType {

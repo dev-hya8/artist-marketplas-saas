@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Drawer,
@@ -74,6 +74,21 @@ export const EditArtworkDrawer = ({
     location: artwork.location || "",
     provenance_log: artwork.provenance_log || "",
   });
+
+  // BUG FIX: Reset form when artwork changes
+  useEffect(() => {
+    setFormData({
+      title: artwork.title,
+      image_url: artwork.image_url || "",
+      price: artwork.price?.toString() || "",
+      status: artwork.status,
+      dimensions: artwork.dimensions || "",
+      depth: artwork.depth?.toString() || "",
+      medium: artwork.medium || "",
+      location: artwork.location || "",
+      provenance_log: artwork.provenance_log || "",
+    });
+  }, [artwork.id]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,7 +246,7 @@ export const EditArtworkDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-image_url">Image URL</Label>
+              <Label htmlFor="edit-image_url" className="text-base font-semibold">Main Thumbnail</Label>
               <Input
                 id="edit-image_url"
                 type="url"
@@ -330,7 +345,13 @@ export const EditArtworkDrawer = ({
               />
             </div>
 
-            <GalleryManager artworkId={artwork.id} />
+            <div className="space-y-2 pt-4 border-t">
+              <Label className="text-base font-semibold">Gallery / Close-ups</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Add multiple images to showcase different angles and details
+              </p>
+              <GalleryManager artworkId={artwork.id} />
+            </div>
 
             <DrawerFooter className="px-0 pb-4">
               {artwork.status !== "Sold" && (

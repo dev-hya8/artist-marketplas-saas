@@ -25,6 +25,9 @@ export const SettingsTab = () => {
     facebook_handle: "",
     twitter_handle: "",
     primary_contact_method: "form",
+    cv_exhibitions: "",
+    cv_education: "",
+    cv_awards: "",
   });
 
   useEffect(() => {
@@ -51,6 +54,9 @@ export const SettingsTab = () => {
         facebook_handle: data.facebook_handle || "",
         twitter_handle: data.twitter_handle || "",
         primary_contact_method: data.primary_contact_method || "form",
+        cv_exhibitions: data.cv_exhibitions || "",
+        cv_education: data.cv_education || "",
+        cv_awards: data.cv_awards || "",
       });
       setBioImagePreview(data.bio_image_url || null);
     } catch (error: any) {
@@ -134,6 +140,9 @@ export const SettingsTab = () => {
           facebook_handle: formData.facebook_handle,
           twitter_handle: formData.twitter_handle,
           primary_contact_method: formData.primary_contact_method,
+          cv_exhibitions: formData.cv_exhibitions,
+          cv_education: formData.cv_education,
+          cv_awards: formData.cv_awards,
         })
         .eq("id", existing.id);
 
@@ -319,6 +328,49 @@ export const SettingsTab = () => {
                   <Label htmlFor="phone" className="font-normal cursor-pointer">Display Phone</Label>
                 </div>
               </RadioGroup>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* CV / Professional Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>CV / Professional Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cv_exhibitions">Exhibitions</Label>
+              <Textarea
+                id="cv_exhibitions"
+                value={formData.cv_exhibitions}
+                onChange={(e) => setFormData({ ...formData, cv_exhibitions: e.target.value })}
+                placeholder="List your exhibitions, one per line..."
+                rows={8}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cv_education">Education</Label>
+              <Textarea
+                id="cv_education"
+                value={formData.cv_education}
+                onChange={(e) => setFormData({ ...formData, cv_education: e.target.value })}
+                placeholder="List your education background..."
+                rows={8}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cv_awards">Awards & Recognition</Label>
+              <Textarea
+                id="cv_awards"
+                value={formData.cv_awards}
+                onChange={(e) => setFormData({ ...formData, cv_awards: e.target.value })}
+                placeholder="List your awards and recognition..."
+                rows={8}
+              />
             </div>
           </form>
         </CardContent>

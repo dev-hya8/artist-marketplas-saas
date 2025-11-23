@@ -21,6 +21,9 @@ export type Database = {
           contact_email: string | null
           created_at: string | null
           currency_region: string | null
+          cv_awards: string | null
+          cv_education: string | null
+          cv_exhibitions: string | null
           display_name: string
           facebook_handle: string | null
           id: string
@@ -37,6 +40,9 @@ export type Database = {
           contact_email?: string | null
           created_at?: string | null
           currency_region?: string | null
+          cv_awards?: string | null
+          cv_education?: string | null
+          cv_exhibitions?: string | null
           display_name?: string
           facebook_handle?: string | null
           id?: string
@@ -53,6 +59,9 @@ export type Database = {
           contact_email?: string | null
           created_at?: string | null
           currency_region?: string | null
+          cv_awards?: string | null
+          cv_education?: string | null
+          cv_exhibitions?: string | null
           display_name?: string
           facebook_handle?: string | null
           id?: string

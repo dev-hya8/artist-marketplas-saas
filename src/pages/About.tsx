@@ -56,6 +56,38 @@ export default function About() {
               )}
             </div>
           </div>
+
+          {/* CV Sections */}
+          {(settings?.cv_exhibitions || settings?.cv_education || settings?.cv_awards) && (
+            <div className="mt-16 space-y-12">
+              {settings?.cv_exhibitions && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-light tracking-wide border-b pb-2">Exhibitions</h3>
+                  <div className="prose prose-sm max-w-none text-foreground font-light leading-relaxed whitespace-pre-wrap">
+                    {settings.cv_exhibitions}
+                  </div>
+                </div>
+              )}
+
+              {settings?.cv_education && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-light tracking-wide border-b pb-2">Education</h3>
+                  <div className="prose prose-sm max-w-none text-foreground font-light leading-relaxed whitespace-pre-wrap">
+                    {settings.cv_education}
+                  </div>
+                </div>
+              )}
+
+              {settings?.cv_awards && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-light tracking-wide border-b pb-2">Awards & Recognition</h3>
+                  <div className="prose prose-sm max-w-none text-foreground font-light leading-relaxed whitespace-pre-wrap">
+                    {settings.cv_awards}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
