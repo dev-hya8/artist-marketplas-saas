@@ -48,16 +48,15 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
   // If only one image (main image), show it without carousel
   if (allImages.length <= 1) {
     return (
-      <div className="relative overflow-hidden bg-muted flex items-center justify-center" style={{ maxHeight: '500px' }}>
+      <div className="w-full h-full flex items-center justify-center p-4">
         {mainImageUrl ? (
           <img
             src={mainImageUrl}
             alt={artworkTitle}
-            className="w-full h-auto object-contain"
-            style={{ maxHeight: '500px' }}
+            className="w-full h-full object-contain"
           />
         ) : (
-          <div className="aspect-square flex items-center justify-center bg-muted">
+          <div className="flex items-center justify-center">
             <span className="text-muted-foreground text-sm">No image</span>
           </div>
         )}
@@ -67,16 +66,15 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
 
   // Show carousel if multiple images
   return (
-    <div className="relative overflow-hidden bg-muted group flex items-center justify-center" style={{ maxHeight: '500px' }}>
-      <Carousel className="w-full">
-        <CarouselContent>
+    <div className="relative w-full h-full group">
+      <Carousel className="w-full h-full">
+        <CarouselContent className="h-full">
           {allImages.map((image, index) => (
-            <CarouselItem key={image.id} className="flex items-center justify-center">
+            <CarouselItem key={image.id} className="flex items-center justify-center h-full p-4">
               <img
                 src={image.image_url}
                 alt={`${artworkTitle} - View ${index + 1}`}
-                className="w-full h-auto object-contain"
-                style={{ maxHeight: '500px' }}
+                className="w-full h-full object-contain"
               />
             </CarouselItem>
           ))}
@@ -85,7 +83,7 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
         <CarouselNext className="right-2 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Carousel>
       {/* Image counter */}
-      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs">
+      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs z-10">
         {allImages.length} photos
       </div>
     </div>
