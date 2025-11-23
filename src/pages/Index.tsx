@@ -1,16 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, ChevronDown, Upload } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
 import { EditArtworkDrawer } from "@/components/EditArtworkDrawer";
@@ -18,7 +12,7 @@ import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
 import { useToast } from "@/hooks/use-toast";
-import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { User, Ruler } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -32,14 +26,9 @@ const Index = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { toast } = useToast();
-  const { currencyCode, currencySymbol, setCurrency } = useCurrency();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
 
   // Fetch artist avatar
-  useEffect(() => {
-    fetchArtistAvatar();
-  }, []);
-
   const fetchArtistAvatar = async () => {
     try {
       const { data, error } = await supabase
@@ -116,6 +105,9 @@ const Index = () => {
   const { data: artworks, isLoading, refetch } = useQuery({
     queryKey: ["artworks"],
     queryFn: async () => {
+      // Fetch avatar on component mount
+      fetchArtistAvatar();
+      
       const { data, error } = await supabase
         .from("artworks")
         .select("*")
@@ -144,26 +136,6 @@ const Index = () => {
             <h1 className="text-2xl font-bold">Artist Dashboard</h1>
             
             <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    {currencyCode} {currencySymbol}
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
-                  {CURRENCIES.map((currency) => (
-                    <DropdownMenuItem
-                      key={currency.code}
-                      onClick={() => setCurrency(currency.code)}
-                      className={currencyCode === currency.code ? "bg-accent" : ""}
-                    >
-                      {currency.code} ({currency.symbol}) - {currency.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               <div className="relative">
                 <input
                   type="file"

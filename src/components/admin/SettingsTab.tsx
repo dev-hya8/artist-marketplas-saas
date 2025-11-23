@@ -9,17 +9,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export const SettingsTab = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [bioImagePreview, setBioImagePreview] = useState<string | null>(null);
+  const { refetchCurrency } = useCurrency();
   const [formData, setFormData] = useState({
     display_name: "",
     contact_email: "",
     bio_text: "",
     bio_image_url: "",
     measurement_unit: "in",
+    currency_region: "US",
     phone_number: "",
     instagram_handle: "",
     facebook_handle: "",
@@ -50,6 +53,7 @@ export const SettingsTab = () => {
         bio_text: data.bio_text || "",
         bio_image_url: data.bio_image_url || "",
         measurement_unit: data.measurement_unit || "in",
+        currency_region: data.currency_region || "US",
         phone_number: data.phone_number || "",
         instagram_handle: data.instagram_handle || "",
         facebook_handle: data.facebook_handle || "",
@@ -137,6 +141,7 @@ export const SettingsTab = () => {
           bio_text: formData.bio_text,
           bio_image_url: formData.bio_image_url,
           measurement_unit: formData.measurement_unit,
+          currency_region: formData.currency_region,
           phone_number: formData.phone_number,
           instagram_handle: formData.instagram_handle,
           facebook_handle: formData.facebook_handle,
@@ -152,6 +157,9 @@ export const SettingsTab = () => {
       if (error) throw error;
 
       toast.success("Profile updated!");
+      
+      // Refetch currency if it was changed
+      await refetchCurrency();
     } catch (error: any) {
       console.error("Error updating settings:", error);
       toast.error(error.message || "Failed to update settings");
@@ -202,8 +210,30 @@ export const SettingsTab = () => {
                 <SelectContent>
                   <SelectItem value="in">Inches (in)</SelectItem>
                   <SelectItem value="cm">Centimeters (cm)</SelectItem>
+                  <SelectItem value="ft">Feet (ft)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="currency_region">Base Currency</Label>
+              <Select 
+                value={formData.currency_region} 
+                onValueChange={(value) => setFormData({ ...formData, currency_region: value })}
+              >
+                <SelectTrigger id="currency_region">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="US">$ - US Dollar (USD)</SelectItem>
+                  <SelectItem value="PH">₱ - Philippine Peso (PHP)</SelectItem>
+                  <SelectItem value="EU">€ - Euro (EUR)</SelectItem>
+                  <SelectItem value="GB">£ - British Pound (GBP)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                This is the currency your artwork prices will be displayed in
+              </p>
             </div>
           </form>
         </CardContent>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CurrencyContextType {
   currencyCode: string;
@@ -7,13 +8,14 @@ interface CurrencyContextType {
   setCurrency: (currency: string) => void;
   exchangeRate: number;
   isRateFailed: boolean;
+  refetchCurrency: () => Promise<void>;
 }
 
 const CURRENCIES = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "USD", symbol: "$", name: "US Dollar", region: "US" },
+  { code: "PHP", symbol: "₱", name: "Philippine Peso", region: "PH" },
+  { code: "EUR", symbol: "€", name: "Euro", region: "EU" },
+  { code: "GBP", symbol: "£", name: "British Pound", region: "GB" },
 ];
 
 const FALLBACK_RATES: Record<string, number> = {
@@ -30,21 +32,32 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const [exchangeRate, setExchangeRate] = useState<number>(1);
   const [isRateFailed, setIsRateFailed] = useState<boolean>(false);
 
-  useEffect(() => {
-    const savedCurrency = localStorage.getItem("selectedCurrency");
-    
-    if (savedCurrency) {
-      setCurrencyCode(savedCurrency);
-    } else {
-      try {
-        const locale = navigator.language || 'en-US';
-        if (locale.toLowerCase().includes('ph') || locale.toLowerCase().includes('fil')) {
-          setCurrencyCode('PHP');
+  const fetchCurrencyFromSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("artist_settings")
+        .select("currency_region")
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data && data.currency_region) {
+        const currency = CURRENCIES.find(c => c.region === data.currency_region);
+        if (currency) {
+          setCurrencyCode(currency.code);
+          return;
         }
-      } catch (error) {
-        console.log('Could not detect locale, defaulting to USD');
       }
+    } catch (error) {
+      console.error("Error fetching currency from settings:", error);
     }
+    
+    // Fallback to USD if no setting found
+    setCurrencyCode("USD");
+  };
+
+  useEffect(() => {
+    fetchCurrencyFromSettings();
   }, []);
 
   useEffect(() => {
@@ -99,7 +112,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const setCurrency = (currency: string) => {
     console.log(`CurrencyContext: Setting currency to ${currency}`);
     setCurrencyCode(currency);
-    localStorage.setItem("selectedCurrency", currency);
+    // Currency is now managed in database, not localStorage
   };
 
   const convertPrice = useCallback((price: number, fromCurrency: string = "USD"): string => {
@@ -137,7 +150,15 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const currencySymbol = CURRENCIES.find(c => c.code === currencyCode)?.symbol || "$";
 
   return (
-    <CurrencyContext.Provider value={{ currencyCode, currencySymbol, convertPrice, setCurrency, exchangeRate, isRateFailed }}>
+    <CurrencyContext.Provider value={{ 
+      currencyCode, 
+      currencySymbol, 
+      convertPrice, 
+      setCurrency, 
+      exchangeRate, 
+      isRateFailed,
+      refetchCurrency: fetchCurrencyFromSettings 
+    }}>
       {children}
     </CurrencyContext.Provider>
   );
