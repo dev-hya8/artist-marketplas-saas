@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { toast } from "@/hooks/use-toast";
 
 interface CurrencyContextType {
   currencyCode: string;
@@ -7,6 +6,7 @@ interface CurrencyContextType {
   convertPrice: (price: number, fromCurrency?: string) => string;
   setCurrency: (currency: string) => void;
   exchangeRate: number;
+  isRateFailed: boolean;
 }
 
 const CURRENCIES = [
@@ -28,6 +28,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const [currencyCode, setCurrencyCode] = useState<string>("USD");
   const [exchangeRate, setExchangeRate] = useState<number>(1);
+  const [isRateFailed, setIsRateFailed] = useState<boolean>(false);
 
   // Auto-detect locale and load saved preference
   useEffect(() => {
@@ -52,6 +53,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (currencyCode === "USD") {
       setExchangeRate(1);
+      setIsRateFailed(false);
       return;
     }
 
@@ -67,18 +69,13 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
         
         if (data.rates && data.rates[currencyCode]) {
           setExchangeRate(data.rates[currencyCode]);
+          setIsRateFailed(false);
         } else {
           throw new Error("Rate not found in response");
         }
       } catch (error) {
-        console.error("Error fetching exchange rates:", error);
         setExchangeRate(FALLBACK_RATES[currencyCode] || 1);
-        
-        toast({
-          title: "Currency Conversion Warning",
-          description: "Error fetching live currency rates. Displaying fallback value.",
-          variant: "destructive",
-        });
+        setIsRateFailed(true);
       }
     };
 
@@ -91,46 +88,43 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const convertPrice = (price: number, fromCurrency: string = "USD"): string => {
+    const fromCurrencyInfo = CURRENCIES.find(c => c.code === fromCurrency);
+    const fromSymbol = fromCurrencyInfo?.symbol || "$";
+    
+    // If API failed, just return the native price
+    if (isRateFailed && fromCurrency !== currencyCode) {
+      return `${fromSymbol}${price.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${fromCurrency}`;
+    }
+    
     const toCurrencyInfo = CURRENCIES.find(c => c.code === currencyCode);
-    const symbol = toCurrencyInfo?.symbol || "$";
+    const toSymbol = toCurrencyInfo?.symbol || "$";
     
     // If converting to the same currency, just format it
     if (currencyCode === fromCurrency) {
-      return `${symbol}${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      return `${toSymbol}${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
     // Convert from any currency to USD first, then to target currency
     let priceInUSD = price;
     
     if (fromCurrency !== "USD") {
-      // Convert FROM the base currency TO USD
       const fromRate = FALLBACK_RATES[fromCurrency] || 1;
       priceInUSD = price / fromRate;
-      
-      console.log("=== CURRENCY CONVERSION DEBUG ===");
-      console.log(`RATE USED (${fromCurrency} to USD):`, fromRate);
-      console.log(`BASE CURRENCY:`, fromCurrency);
-      console.log(`PRICE IN USD:`, priceInUSD);
     }
     
     // Now convert from USD to target currency
     if (currencyCode === "USD") {
-      const finalValue = priceInUSD;
-      console.log(`FINAL CONVERTED VALUE (${currencyCode}):`, finalValue);
-      return `${symbol}${finalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      return `${toSymbol}${priceInUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
     const converted = priceInUSD * exchangeRate;
-    console.log(`RATE USED (USD to ${currencyCode}):`, exchangeRate);
-    console.log(`FINAL CONVERTED VALUE (${currencyCode}):`, converted);
-    
-    return `${symbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    return `${toSymbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   };
 
   const currencySymbol = CURRENCIES.find(c => c.code === currencyCode)?.symbol || "$";
 
   return (
-    <CurrencyContext.Provider value={{ currencyCode, currencySymbol, convertPrice, setCurrency, exchangeRate }}>
+    <CurrencyContext.Provider value={{ currencyCode, currencySymbol, convertPrice, setCurrency, exchangeRate, isRateFailed }}>
       {children}
     </CurrencyContext.Provider>
   );
