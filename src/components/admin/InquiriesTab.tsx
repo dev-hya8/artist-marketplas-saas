@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Star, Archive, Trash2, RotateCcw, Trash, Mail, Mail as MailOpen, X } from "lucide-react";
+import { Star, Archive, Trash2, RotateCcw, Trash, Mail, Eye, EyeOff, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
@@ -223,9 +223,9 @@ export const InquiriesTab = () => {
                 onClick={(e) => handleToggleRead(e, inquiry)}
               >
                 {inquiry.is_read ? (
-                  <MailOpen className="h-4 w-4 text-muted-foreground" />
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Mail className="h-4 w-4 text-primary" />
+                  <EyeOff className="h-4 w-4 text-primary" />
                 )}
               </Button>
               {isExpanded && (
