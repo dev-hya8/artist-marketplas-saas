@@ -164,6 +164,9 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     );
   }
 
+  const maxImages = 4;
+  const isAtMaxCapacity = galleryImages.length >= maxImages;
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -174,14 +177,29 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
             type="file"
             accept="image/*"
             onChange={handleFileUpload}
-            disabled={uploading}
+            disabled={uploading || isAtMaxCapacity}
             className="flex-1"
           />
-          <Button type="button" disabled={uploading} size="icon" variant="outline">
+          <Button 
+            type="button" 
+            disabled={uploading || isAtMaxCapacity} 
+            size="icon" 
+            variant="outline"
+          >
             <Upload className="h-4 w-4" />
           </Button>
         </div>
         {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+        {isAtMaxCapacity && (
+          <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+            Maximum 4 additional photos reached (5 total)
+          </p>
+        )}
+        {!isAtMaxCapacity && galleryImages.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {galleryImages.length} of {maxImages} additional images uploaded
+          </p>
+        )}
       </div>
 
       {loading ? (
