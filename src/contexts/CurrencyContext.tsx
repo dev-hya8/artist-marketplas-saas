@@ -93,7 +93,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     
     // If API failed, just return the native price
     if (isRateFailed && fromCurrency !== currencyCode) {
-      return `${fromSymbol}${price.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${fromCurrency}`;
+      return `${fromSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${fromCurrency}`;
     }
     
     const toCurrencyInfo = CURRENCIES.find(c => c.code === currencyCode);
@@ -101,7 +101,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     
     // If converting to the same currency, just format it
     if (currencyCode === fromCurrency) {
-      return `${toSymbol}${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      return `${toSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
     // Convert from any currency to USD first, then to target currency
@@ -114,10 +114,11 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     
     // Now convert from USD to target currency
     if (currencyCode === "USD") {
-      return `${toSymbol}${priceInUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+      const finalValue = Math.round(priceInUSD);
+      return `${toSymbol}${finalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
 
-    const converted = priceInUSD * exchangeRate;
+    const converted = Math.round(priceInUSD * exchangeRate);
     return `${toSymbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   };
 
