@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -45,6 +45,7 @@ export const AddArtworkDrawer = ({
     title: "",
     image_url: "",
     price: "",
+    base_currency: "USD",
     status: "Available" as ArtworkStatus,
     dimensions: "",
     depth: "",
@@ -202,6 +203,7 @@ export const AddArtworkDrawer = ({
         title: formData.title,
         image_url: formData.image_url || null,
         price: formData.sale_type === "fixed" && formData.price ? parseFloat(formData.price) : null,
+        base_currency: formData.base_currency,
         status: formData.status,
         dimensions: formData.dimensions || null,
         depth: formData.depth ? parseFloat(formData.depth) : null,
@@ -228,6 +230,7 @@ export const AddArtworkDrawer = ({
         title: "",
         image_url: "",
         price: "",
+        base_currency: "USD",
         status: "Available",
         dimensions: "",
         depth: "",
@@ -324,20 +327,46 @@ export const AddArtworkDrawer = ({
 
           {formData.sale_type === "fixed" ? (
             <div className="space-y-2">
-              <Label htmlFor="price">Price (USD) *</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.price}
-                onChange={(e) => {
-                  setFormData({ ...formData, price: e.target.value });
-                  setErrors({ ...errors, price: false });
-                }}
-                className={errors.price ? "border-destructive" : ""}
-              />
-              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== "USD" && (
+              <Label htmlFor="price">Price *</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="price"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={formData.price}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow only numbers and decimal point
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setFormData({ ...formData, price: value });
+                      setErrors({ ...errors, price: false });
+                    }
+                  }}
+                  className={`flex-1 ${errors.price ? "border-destructive" : ""}`}
+                  style={{
+                    appearance: 'textfield',
+                    MozAppearance: 'textfield',
+                    WebkitAppearance: 'none'
+                  }}
+                />
+                <Select
+                  value={formData.base_currency}
+                  onValueChange={(value) => setFormData({ ...formData, base_currency: value })}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== formData.base_currency && (
                 <p className="text-xs text-muted-foreground">
                   ≈ {convertPrice(parseFloat(formData.price))}
                 </p>

@@ -33,7 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Trash2 } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -67,6 +67,7 @@ export const EditArtworkDrawer = ({
     title: artwork.title,
     image_url: artwork.image_url || "",
     price: artwork.price?.toString() || "",
+    base_currency: artwork.base_currency || "USD",
     status: artwork.status,
     dimensions: artwork.dimensions || "",
     depth: artwork.depth?.toString() || "",
@@ -81,6 +82,7 @@ export const EditArtworkDrawer = ({
       title: artwork.title,
       image_url: artwork.image_url || "",
       price: artwork.price?.toString() || "",
+      base_currency: artwork.base_currency || "USD",
       status: artwork.status,
       dimensions: artwork.dimensions || "",
       depth: artwork.depth?.toString() || "",
@@ -101,6 +103,7 @@ export const EditArtworkDrawer = ({
           title: formData.title,
           image_url: formData.image_url || null,
           price: formData.price ? parseFloat(formData.price) : null,
+          base_currency: formData.base_currency,
           status: formData.status,
           dimensions: formData.dimensions || null,
           depth: formData.depth ? parseFloat(formData.depth) : null,
@@ -257,16 +260,45 @@ export const EditArtworkDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Price (USD)</Label>
-              <Input
-                id="edit-price"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              />
-              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== "USD" && (
+              <Label htmlFor="edit-price">Price *</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit-price"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={formData.price}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow only numbers and decimal point
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setFormData({ ...formData, price: value });
+                    }
+                  }}
+                  className="flex-1"
+                  style={{
+                    appearance: 'textfield',
+                    MozAppearance: 'textfield',
+                    WebkitAppearance: 'none'
+                  }}
+                />
+                <Select
+                  value={formData.base_currency}
+                  onValueChange={(value) => setFormData({ ...formData, base_currency: value })}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== formData.base_currency && (
                 <p className="text-xs text-muted-foreground">
                   ≈ {convertPrice(parseFloat(formData.price))}
                 </p>
