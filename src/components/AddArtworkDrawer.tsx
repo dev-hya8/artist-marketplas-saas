@@ -363,16 +363,40 @@ export const AddArtworkDrawer = ({
               <div className="flex gap-2">
                 <Input
                   id="price"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="0"
                   value={formData.price}
+                  onKeyDown={(e) => {
+                    // Block decimal point and comma
+                    if (e.key === '.' || e.key === ',') {
+                      e.preventDefault();
+                      toast({
+                        title: "Whole numbers only",
+                        description: "Please enter an integer value without decimals",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow only numbers and decimal point
-                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    // Allow only empty or whole numbers
+                    if (value === '' || /^\d+$/.test(value)) {
                       setFormData({ ...formData, price: value });
                       setErrors({ ...errors, price: false });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Round any pasted decimal values
+                    const value = e.target.value;
+                    if (value && value.includes('.')) {
+                      const rounded = Math.round(parseFloat(value)).toString();
+                      setFormData({ ...formData, price: rounded });
+                      toast({
+                        title: "Value rounded",
+                        description: "Decimal values are not allowed. The price has been rounded to the nearest whole number.",
+                      });
                     }
                   }}
                   className={`flex-1 ${errors.price ? "border-destructive" : ""}`}
