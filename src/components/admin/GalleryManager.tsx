@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, Eye } from "lucide-react";
+import { Trash2, Upload, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface GalleryManagerProps {
   artworkId: string | null;
@@ -23,12 +23,52 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0);
 
   useEffect(() => {
     if (artworkId) {
       fetchGalleryImages();
     }
   }, [artworkId]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!lightboxImage) return;
+      
+      if (e.key === "ArrowLeft") {
+        handlePreviousImage();
+      } else if (e.key === "ArrowRight") {
+        handleNextImage();
+      } else if (e.key === "Escape") {
+        setLightboxImage(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxImage, lightboxIndex, galleryImages]);
+
+  const handlePreviousImage = () => {
+    if (lightboxIndex > 0) {
+      const newIndex = lightboxIndex - 1;
+      setLightboxIndex(newIndex);
+      setLightboxImage(galleryImages[newIndex].image_url);
+    }
+  };
+
+  const handleNextImage = () => {
+    if (lightboxIndex < galleryImages.length - 1) {
+      const newIndex = lightboxIndex + 1;
+      setLightboxIndex(newIndex);
+      setLightboxImage(galleryImages[newIndex].image_url);
+    }
+  };
+
+  const openLightbox = (imageUrl: string, index: number) => {
+    setLightboxImage(imageUrl);
+    setLightboxIndex(index);
+  };
 
   const fetchGalleryImages = async () => {
     if (!artworkId) return;
@@ -208,11 +248,11 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         <p className="text-sm text-muted-foreground">Loading gallery...</p>
       ) : galleryImages.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {galleryImages.map((image) => (
+          {galleryImages.map((image, index) => (
             <div key={image.id} className="relative group">
               <div 
                 className="w-full rounded-md border overflow-hidden cursor-pointer"
-                onClick={() => setLightboxImage(image.image_url)}
+                onClick={() => openLightbox(image.image_url, index)}
               >
                 <img
                   src={image.image_url}
@@ -224,18 +264,19 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                   <Eye className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <Button
+              
+              {/* Circular X button - always visible on hover */}
+              <button
                 type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteImage(image.id, image.image_url);
                 }}
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/70 hover:bg-black/90 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+                aria-label="Remove image"
               >
-                <Trash2 className="h-3 w-3" />
-              </Button>
+                <X className="h-4 w-4" />
+              </button>
             </div>
           ))}
         </div>
@@ -243,7 +284,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         <p className="text-sm text-muted-foreground">No additional images yet</p>
       )}
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal with Navigation */}
       <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
         <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
           {lightboxImage && (
@@ -253,6 +294,33 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                 alt="Full size preview"
                 className="w-full h-auto max-h-[90vh] object-contain"
               />
+              
+              {/* Previous Button */}
+              {lightboxIndex > 0 && (
+                <button
+                  onClick={handlePreviousImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors z-10"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+              
+              {/* Next Button */}
+              {lightboxIndex < galleryImages.length - 1 && (
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors z-10"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+              
+              {/* Image Counter */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm">
+                {lightboxIndex + 1} / {galleryImages.length}
+              </div>
             </div>
           )}
         </DialogContent>
