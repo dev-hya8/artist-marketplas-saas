@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       artist_settings: {
         Row: {
+          avatar_url: string | null
           bio_image_url: string | null
           bio_text: string | null
           contact_email: string | null
@@ -36,6 +37,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           bio_image_url?: string | null
           bio_text?: string | null
           contact_email?: string | null
@@ -56,6 +58,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           bio_image_url?: string | null
           bio_text?: string | null
           contact_email?: string | null
