@@ -217,23 +217,14 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="gallery-upload">Additional Views</Label>
-        <div className="flex gap-2">
+        <div>
           <Input
             id="gallery-upload"
             type="file"
             accept="image/*"
             onChange={handleFileUpload}
             disabled={uploading || isAtMaxCapacity}
-            className="flex-1"
           />
-          <Button 
-            type="button" 
-            disabled={uploading || isAtMaxCapacity} 
-            size="icon" 
-            variant="outline"
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
         </div>
         {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
         {isAtMaxCapacity && (
