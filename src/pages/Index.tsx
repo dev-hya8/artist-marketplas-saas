@@ -148,7 +148,7 @@ const Index = () => {
                 <p className="text-muted-foreground">Loading artworks...</p>
               </div>
             ) : artworks && artworks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 {artworks.map((artwork) => (
                   <ArtworkCard
                     key={artwork.id}
