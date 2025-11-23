@@ -128,6 +128,7 @@ export const EditArtworkDrawer = ({
         .from('artwork_images')
         .getPublicUrl(filePath);
 
+      // Attempt to delete old image if replacing
       if (artwork.image_url) {
         try {
           const urlParts = artwork.image_url.split('/');
@@ -163,6 +164,11 @@ export const EditArtworkDrawer = ({
     } finally {
       setUploading(false);
     }
+  };
+
+  // Logic to remove the main thumbnail from the UI (will be saved as null on update)
+  const handleRemoveThumbnail = () => {
+    setFormData({ ...formData, image_url: "" });
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -282,12 +288,21 @@ export const EditArtworkDrawer = ({
               <Label className="text-base font-semibold">Main Thumbnail</Label>
               
               {formData.image_url && (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted">
+                <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted group">
                   <img 
                     src={formData.image_url} 
                     alt={formData.title}
                     className="w-full h-full object-contain"
                   />
+                  {/* Added Remove Button for Main Thumbnail */}
+                  <button
+                    type="button"
+                    onClick={handleRemoveThumbnail}
+                    className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    title="Remove Thumbnail"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
                 </div>
               )}
               
