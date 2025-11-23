@@ -125,6 +125,7 @@ export type Database = {
           bid_history: Json | null
           buyer_email: string | null
           created_at: string | null
+          creation_year: number | null
           current_bid: number | null
           depth: number | null
           dimension_unit: string | null
@@ -148,6 +149,7 @@ export type Database = {
           bid_history?: Json | null
           buyer_email?: string | null
           created_at?: string | null
+          creation_year?: number | null
           current_bid?: number | null
           depth?: number | null
           dimension_unit?: string | null
@@ -171,6 +173,7 @@ export type Database = {
           bid_history?: Json | null
           buyer_email?: string | null
           created_at?: string | null
+          creation_year?: number | null
           current_bid?: number | null
           depth?: number | null
           dimension_unit?: string | null

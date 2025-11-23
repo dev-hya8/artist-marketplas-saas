@@ -71,13 +71,14 @@ export const EditArtworkDrawer = ({
   const [formData, setFormData] = useState({
     title: artwork.title,
     image_url: artwork.image_url || "",
-    price: artwork.price?.toString() || "",
-    base_currency: artwork.base_currency || "USD",
-    status: artwork.status,
+    creation_year: artwork.creation_year?.toString() || "",
+    medium: artwork.medium || "",
     dimensions: artwork.dimensions || "",
     dimension_unit: artwork.dimension_unit || "in",
     depth: artwork.depth?.toString() || "",
-    medium: artwork.medium || "",
+    status: artwork.status,
+    price: artwork.price?.toString() || "",
+    base_currency: artwork.base_currency || "USD",
     location: artwork.location || "",
     provenance_log: artwork.provenance_log || "",
   });
@@ -86,13 +87,14 @@ export const EditArtworkDrawer = ({
     setFormData({
       title: artwork.title,
       image_url: artwork.image_url || "",
-      price: artwork.price?.toString() || "",
-      base_currency: artwork.base_currency || "USD",
-      status: artwork.status,
+      creation_year: artwork.creation_year?.toString() || "",
+      medium: artwork.medium || "",
       dimensions: artwork.dimensions || "",
       dimension_unit: artwork.dimension_unit || "in",
       depth: artwork.depth?.toString() || "",
-      medium: artwork.medium || "",
+      status: artwork.status,
+      price: artwork.price?.toString() || "",
+      base_currency: artwork.base_currency || "USD",
       location: artwork.location || "",
       provenance_log: artwork.provenance_log || "",
     });
@@ -183,13 +185,14 @@ export const EditArtworkDrawer = ({
         .update({
           title: formData.title,
           image_url: formData.image_url || null,
-          price: formData.price ? parseFloat(formData.price) : null,
-          base_currency: formData.base_currency,
-          status: formData.status,
+          creation_year: formData.creation_year ? parseInt(formData.creation_year) : null,
+          medium: formData.medium || null,
           dimensions: formData.dimensions || null,
           dimension_unit: formData.dimension_unit,
           depth: formData.depth ? parseFloat(formData.depth) : null,
-          medium: formData.medium || null,
+          status: formData.status,
+          price: formData.price ? parseFloat(formData.price) : null,
+          base_currency: formData.base_currency,
           location: formData.location || null,
           provenance_log: formData.provenance_log || null,
         })
@@ -271,13 +274,14 @@ export const EditArtworkDrawer = ({
   const hasChanges = 
     formData.title !== artwork.title ||
     formData.image_url !== (artwork.image_url || "") ||
-    formData.price !== (artwork.price?.toString() || "") ||
-    formData.base_currency !== (artwork.base_currency || "USD") ||
-    formData.status !== artwork.status ||
+    formData.creation_year !== (artwork.creation_year?.toString() || "") ||
+    formData.medium !== (artwork.medium || "") ||
     formData.dimensions !== (artwork.dimensions || "") ||
     formData.dimension_unit !== (artwork.dimension_unit || "in") ||
     formData.depth !== (artwork.depth?.toString() || "") ||
-    formData.medium !== (artwork.medium || "") ||
+    formData.status !== artwork.status ||
+    formData.price !== (artwork.price?.toString() || "") ||
+    formData.base_currency !== (artwork.base_currency || "USD") ||
     formData.location !== (artwork.location || "") ||
     formData.provenance_log !== (artwork.provenance_log || "") ||
     galleryHasChanges;
@@ -290,17 +294,8 @@ export const EditArtworkDrawer = ({
             <DrawerTitle>Edit Artwork</DrawerTitle>
             <DrawerDescription>Update the details of your artwork</DrawerDescription>
           </DrawerHeader>
-          <form onSubmit={handleUpdate} className="px-4 space-y-4 max-h-[60vh] overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Title *</Label>
-              <Input
-                id="edit-title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </div>
-
+          <form onSubmit={handleUpdate} className="px-4 space-y-6 max-h-[60vh] overflow-y-auto">
+            {/* MAIN IMAGE UPLOAD */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">Main Thumbnail</Label>
               
@@ -349,8 +344,116 @@ export const EditArtworkDrawer = ({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-price">Price *</Label>
+            {/* SECTION 1: THE OBJECT (TOMBSTONE DATA) */}
+            <div className="space-y-4 pt-2 border-t">
+              <h3 className="text-sm font-semibold text-muted-foreground">Artwork Details</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-title">Title *</Label>
+                <Input
+                  id="edit-title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-creation_year">Creation Year</Label>
+                <Input
+                  id="edit-creation_year"
+                  type="number"
+                  min="1000"
+                  max="2100"
+                  placeholder="e.g., 2024"
+                  value={formData.creation_year}
+                  onChange={(e) => setFormData({ ...formData, creation_year: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-medium">Medium</Label>
+                <Input
+                  id="edit-medium"
+                  placeholder="e.g., Oil on canvas"
+                  value={formData.medium}
+                  onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-dimensions">Dimensions (H x W)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="edit-dimensions"
+                    placeholder="e.g. 24 x 36 (Enter numbers only)"
+                    value={formData.dimensions}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, dimensions: value });
+                      setDimensionUnitWarning(checkForUnits(value));
+                    }}
+                    className="flex-1"
+                  />
+                  <Select
+                    value={formData.dimension_unit}
+                    onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cm">cm</SelectItem>
+                      <SelectItem value="in">in</SelectItem>
+                      <SelectItem value="ft">ft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {dimensionUnitWarning && (
+                  <p className="text-sm text-amber-600 dark:text-amber-500">
+                    ⚠️ Please select the unit from the dropdown instead of typing it.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-depth">Depth (optional)</Label>
+                <Input
+                  id="edit-depth"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g., 2"
+                  value={formData.depth}
+                  onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
+              </div>
+            </div>
+
+            {/* SECTION 2: COMMERCIAL STATUS */}
+            <div className="space-y-4 pt-2 border-t">
+              <h3 className="text-sm font-semibold text-muted-foreground">Commercial Information</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Available">Available</SelectItem>
+                    <SelectItem value="Sold">Sold</SelectItem>
+                    <SelectItem value="On Loan">On Loan</SelectItem>
+                    <SelectItem value="Reserved">Reserved</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-price">Price</Label>
               <div className="flex gap-2">
                 <Input
                   id="edit-price"
@@ -412,110 +515,41 @@ export const EditArtworkDrawer = ({
                   </SelectContent>
                 </Select>
               </div>
-              {formData.price && parseFloat(formData.price) > 0 && !isRateFailed && currencyCode !== formData.base_currency && (
-                <p className="text-xs text-muted-foreground">
-                  ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Available">Available</SelectItem>
-                  <SelectItem value="Sold">Sold</SelectItem>
-                  <SelectItem value="On Loan">On Loan</SelectItem>
-                  <SelectItem value="Reserved">Reserved</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-dimensions">Dimensions (H x W)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="edit-dimensions"
-                  placeholder="e.g. 24 x 36 (Enter numbers only)"
-                  value={formData.dimensions}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, dimensions: value });
-                    setDimensionUnitWarning(checkForUnits(value));
-                  }}
-                  className="flex-1"
-                />
-                <Select
-                  value={formData.dimension_unit}
-                  onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
-                >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cm">cm</SelectItem>
-                    <SelectItem value="in">in</SelectItem>
-                    <SelectItem value="ft">ft</SelectItem>
-                  </SelectContent>
-                </Select>
+                {formData.price && parseFloat(formData.price) > 0 && !isRateFailed && currencyCode !== formData.base_currency && (
+                  <p className="text-xs text-muted-foreground">
+                    ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
+                  </p>
+                )}
               </div>
-              {dimensionUnitWarning && (
-                <p className="text-sm text-amber-600 dark:text-amber-500">
-                  ⚠️ Please select the unit from the dropdown instead of typing it.
-                </p>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-depth">Depth (optional)</Label>
-              <Input
-                id="edit-depth"
-                type="number"
-                step="0.01"
-                placeholder="e.g., 2"
-                value={formData.depth}
-                onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
+            {/* SECTION 3: LOGISTICS & HISTORY */}
+            <div className="space-y-4 pt-2 border-t">
+              <h3 className="text-sm font-semibold text-muted-foreground">Location & Provenance</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-location">Location</Label>
+                <Input
+                  id="edit-location"
+                  placeholder="e.g., Studio, Gallery X"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-provenance">Provenance Log</Label>
+                <Textarea
+                  id="edit-provenance"
+                  placeholder="History of ownership..."
+                  value={formData.provenance_log}
+                  onChange={(e) => setFormData({ ...formData, provenance_log: e.target.value })}
+                  rows={3}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-medium">Medium</Label>
-              <Input
-                id="edit-medium"
-                placeholder="e.g., Oil on canvas"
-                value={formData.medium}
-                onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                placeholder="e.g., Studio, Gallery X"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-provenance">Provenance Log</Label>
-              <Textarea
-                id="edit-provenance"
-                placeholder="History of ownership..."
-                value={formData.provenance_log}
-                onChange={(e) => setFormData({ ...formData, provenance_log: e.target.value })}
-                rows={3}
-              />
-            </div>
-
+            {/* SECTION 4: ADDITIONAL VIEWS */}
             <div className="space-y-2 pt-4 border-t">
               <Label className="text-base font-semibold">Gallery / Close-ups</Label>
               <p className="text-sm text-muted-foreground mb-2">
