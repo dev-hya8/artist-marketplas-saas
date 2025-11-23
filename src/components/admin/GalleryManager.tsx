@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, X, ChevronLeft, ChevronRight, Upload } from "lucide-react";
+import { Trash2, X, ChevronLeft, ChevronRight, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface GalleryManagerProps {
@@ -17,18 +17,28 @@ interface GalleryImage {
   created_at: string;
 }
 
+// Define a type for local previews
+interface PendingUpload {
+  id: string; // Temporary ID
+  previewUrl: string;
+  file: File;
+}
+
 export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const { toast } = useToast();
-  const [uploading, setUploading] = useState(false);
+  // We'll use a local state to track uploads in progress
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
+  // Track images that failed to load to show a placeholder
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const fetchGalleryImages = useCallback(async () => {
     if (!artworkId) return;
 
-    // Don't show global loading spinner on refetch to prevent flickering
+    // Only show global loading on initial fetch
     if (galleryImages.length === 0) setLoading(true);
     
     try {
@@ -90,36 +100,23 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     setLightboxIndex(index);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!artworkId) {
-      toast({
-        title: "Error",
-        description: "Please save the artwork first before adding gallery images",
-        variant: "destructive",
-      });
-      return;
-    }
+  const uploadFile = async (file: File) => {
+    if (!artworkId) return;
 
-    const file = e.target.files?.[0];
-    if (!file) return;
+    // 1. Create a temporary local preview
+    const tempId = Math.random().toString(36).substring(7);
+    const previewUrl = URL.createObjectURL(file);
+    const newPendingUpload: PendingUpload = { id: tempId, previewUrl, file };
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      e.target.value = "";
-      return;
-    }
+    // 2. Add to pending queue to show immediately in UI
+    setPendingUploads(prev => [newPendingUpload, ...prev]);
 
-    setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = fileName;
 
+      // 3. Start uploading to Supabase
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
         .upload(filePath, file);
@@ -130,6 +127,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         .from('artwork_images')
         .getPublicUrl(filePath);
 
+      // 4. Insert into database
       const { error: dbError } = await supabase
         .from("artwork_gallery")
         .insert({
@@ -144,8 +142,9 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         description: "Gallery image uploaded successfully",
       });
 
-      fetchGalleryImages();
-      e.target.value = "";
+      // 5. On success, refetch real data and remove from pending
+      await fetchGalleryImages();
+      
     } catch (error: any) {
       console.error("Gallery image upload error:", error);
       toast({
@@ -154,20 +153,51 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         variant: "destructive",
       });
     } finally {
-      setUploading(false);
+      // Remove from pending list regardless of success/failure
+      setPendingUploads(prev => prev.filter(p => p.id !== tempId));
+      URL.revokeObjectURL(previewUrl); // Clean up memory
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!artworkId) {
+      toast({
+        title: "Error",
+        description: "Please save the artwork first before adding gallery images",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+    } else {
+      // Start the upload process
+      uploadFile(file);
+    }
+    
+    // Reset input
+    e.target.value = "";
   };
 
   const handleDeleteImage = async (imageId: string, imageUrl: string) => {
     const confirmed = window.confirm("Are you sure you want to remove this image?");
     if (!confirmed) return;
 
-    // 1. OPTIMISTIC UPDATE: Remove from UI immediately
-    const previousImages = [...galleryImages]; // Keep a backup in case of error
+    // Optimistic update
+    const previousImages = [...galleryImages];
     setGalleryImages(current => current.filter(img => img.id !== imageId));
 
     try {
-      // 2. Delete from Storage
       const urlParts = imageUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
 
@@ -176,10 +206,9 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         .remove([fileName]);
 
       if (storageError) {
-        console.error("Storage deletion error:", storageError);
+        console.warn("Storage deletion error (image might already be gone):", storageError);
       }
 
-      // 3. Delete from Database
       const { error: dbError } = await supabase
         .from("artwork_gallery")
         .delete()
@@ -194,10 +223,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
       
     } catch (error: any) {
       console.error("Error deleting gallery image:", error);
-      
-      // Revert UI on error
-      setGalleryImages(previousImages);
-      
+      setGalleryImages(previousImages); // Revert on error
       toast({
         title: "Error",
         description: error.message || "Failed to delete gallery image",
@@ -217,8 +243,10 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     );
   }
 
+  const totalImages = galleryImages.length + pendingUploads.length;
   const maxImages = 4;
-  const isAtMaxCapacity = galleryImages.length >= maxImages;
+  const isAtMaxCapacity = totalImages >= maxImages;
+  const isUploading = pendingUploads.length > 0;
 
   return (
     <div className="space-y-4">
@@ -226,9 +254,9 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="gallery-upload">Additional Views</Label>
-          {!isAtMaxCapacity && galleryImages.length > 0 && (
+          {!isAtMaxCapacity && totalImages > 0 && (
             <span className="text-xs text-muted-foreground">
-              {galleryImages.length} of {maxImages}
+              {totalImages} of {maxImages}
             </span>
           )}
         </div>
@@ -239,18 +267,22 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
             type="file"
             accept="image/*"
             onChange={handleFileUpload}
-            disabled={uploading || isAtMaxCapacity}
+            disabled={isUploading || isAtMaxCapacity}
             className="hidden"
           />
           <Button
             type="button"
             variant="outline"
             onClick={() => document.getElementById('gallery-upload')?.click()}
-            disabled={uploading || isAtMaxCapacity}
+            disabled={isUploading || isAtMaxCapacity}
             className="w-full border-dashed"
           >
-            <Upload className="mr-2 h-4 w-4" />
-            {uploading ? "Uploading..." : isAtMaxCapacity ? "Max Limit Reached" : "Add Gallery Image"}
+            {isUploading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            {isUploading ? "Uploading..." : isAtMaxCapacity ? "Max Limit Reached" : "Add Gallery Image"}
           </Button>
         </div>
 
@@ -262,21 +294,46 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
       </div>
 
       {/* Grid Display */}
-      {loading && galleryImages.length === 0 ? (
+      {loading && galleryImages.length === 0 && pendingUploads.length === 0 ? (
         <p className="text-sm text-muted-foreground">Loading gallery...</p>
-      ) : galleryImages.length > 0 ? (
+      ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          {galleryImages.map((image, index) => (
+          
+          {/* 1. Render Pending Uploads First */}
+          {pendingUploads.map((pending) => (
+            <div key={pending.id} className="relative group aspect-square">
+              <div className="w-full h-full rounded-md border overflow-hidden bg-muted relative">
+                <img
+                  src={pending.previewUrl}
+                  alt="Uploading preview"
+                  className="w-full h-full object-cover opacity-50"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* 2. Render Existing Gallery Images */}
+          {galleryImages.map((image, index) => {
+            const hasFailed = failedImages.has(image.id);
+            return (
             <div key={image.id} className="relative group aspect-square">
               <div 
-                className="w-full h-full rounded-md border overflow-hidden cursor-pointer hover:opacity-90 transition-opacity bg-muted"
-                onClick={() => openLightbox(image.image_url, index)}
+                className="w-full h-full rounded-md border overflow-hidden cursor-pointer hover:opacity-90 transition-opacity bg-muted flex items-center justify-center"
+                onClick={() => !hasFailed && openLightbox(image.image_url, index)}
               >
-                <img
-                  src={image.image_url}
-                  alt="Gallery"
-                  className="w-full h-full object-cover"
-                />
+                {hasFailed ? (
+                  <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+                ) : (
+                  <img
+                    src={image.image_url}
+                    alt="Gallery"
+                    className="w-full h-full object-cover"
+                    onError={() => setFailedImages(prev => new Set(prev).add(image.id))}
+                  />
+                )}
               </div>
               
               <button
@@ -291,9 +348,9 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
-          ))}
+          )})}
         </div>
-      ) : null}
+      )}
 
       {/* Lightbox Modal */}
       <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
