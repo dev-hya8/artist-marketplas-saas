@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageCropperDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ export const ImageCropperDialog = ({
   imageUrl,
   onCropComplete,
 }: ImageCropperDialogProps) => {
+  const { toast } = useToast();
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -52,11 +54,17 @@ export const ImageCropperDialog = ({
     
     if (!croppedAreaPixels) {
       console.error("No cropped area pixels available");
+      toast({
+        title: "Error",
+        description: "No crop area selected. Please adjust the crop area.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsProcessing(true);
     try {
+      console.log("Loading image:", imageUrl);
       const image = await createImage(imageUrl);
       console.log("Image loaded:", image.width, "x", image.height);
       
@@ -93,11 +101,20 @@ export const ImageCropperDialog = ({
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            console.log("Blob created:", blob.size, "bytes");
+            console.log("Blob created successfully:", blob.size, "bytes");
+            toast({
+              title: "Crop Applied",
+              description: "Processing cropped image...",
+            });
             onCropComplete(blob);
             onOpenChange(false);
           } else {
-            console.error("Failed to create blob");
+            console.error("Failed to create blob from canvas");
+            toast({
+              title: "Error",
+              description: "Failed to process cropped image",
+              variant: "destructive",
+            });
           }
           setIsProcessing(false);
         },
@@ -106,6 +123,11 @@ export const ImageCropperDialog = ({
       );
     } catch (error) {
       console.error("Error creating cropped image:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to crop image",
+        variant: "destructive",
+      });
       setIsProcessing(false);
     }
   };
@@ -184,7 +206,9 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
     const image = new Image();
     image.addEventListener("load", () => resolve(image));
     image.addEventListener("error", (error) => reject(error));
-    // Enable CORS for data URLs and external images
-    image.setAttribute("crossOrigin", "anonymous");
+    // Only set CORS for external URLs, not data URLs
+    if (!url.startsWith('data:')) {
+      image.setAttribute("crossOrigin", "anonymous");
+    }
     image.src = url;
   });

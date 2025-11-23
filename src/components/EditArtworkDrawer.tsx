@@ -154,16 +154,24 @@ export const EditArtworkDrawer = ({
   };
 
   const handleCropComplete = async (croppedBlob: Blob) => {
+    console.log("handleCropComplete called with blob:", croppedBlob.size, "bytes");
     setCroppedBlob(croppedBlob);
     setUploading(true);
 
     try {
+      // Convert Blob to File for upload
+      const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.jpg`, {
+        type: 'image/jpeg',
+      });
+
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
       const filePath = fileName;
 
+      console.log("Uploading cropped file:", fileName);
+
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
-        .upload(filePath, croppedBlob);
+        .upload(filePath, croppedFile);
 
       if (uploadError) throw uploadError;
 
@@ -175,7 +183,7 @@ export const EditArtworkDrawer = ({
       if (artwork.image_url) {
         try {
           const urlParts = artwork.image_url.split('/');
-          const oldFileName = urlParts[urlParts.length - 1];
+          const oldFileName = urlParts[urlParts.length - 1].split('?')[0]; // Remove any query params
           
           const { error: deleteError } = await supabase.storage
             .from('artwork_images')
@@ -189,17 +197,18 @@ export const EditArtworkDrawer = ({
         }
       }
 
+      console.log("Setting image URL:", publicUrl);
       setFormData({ ...formData, image_url: publicUrl });
       
       toast({
         title: "Success",
-        description: "Thumbnail updated successfully",
+        description: "Cropped thumbnail updated successfully",
       });
     } catch (error: any) {
       console.error("Thumbnail upload error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to upload thumbnail",
+        description: error.message || "Failed to upload cropped thumbnail",
         variant: "destructive",
       });
     } finally {
