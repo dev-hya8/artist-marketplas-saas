@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload, Crop } from "lucide-react";
+import { Trash2, Upload, Crop, X } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
@@ -60,6 +60,7 @@ export const EditArtworkDrawer = ({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
   const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
   const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
@@ -339,11 +340,39 @@ export const EditArtworkDrawer = ({
     formData.provenance_log !== (artwork.provenance_log || "") ||
     galleryHasChanges;
 
+  // Handle close attempt with unsaved changes check
+  const handleAttemptClose = () => {
+    if (hasChanges) {
+      setShowUnsavedAlert(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleSaveAndClose = async () => {
+    await handleUpdate(new Event('submit') as any);
+    setShowUnsavedAlert(false);
+  };
+
+  const handleDiscardAndClose = () => {
+    setShowUnsavedAlert(false);
+    onClose();
+  };
+
   return (
     <>
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={(open) => !open && handleAttemptClose()}>
         <DrawerContent>
-          <DrawerHeader>
+          <DrawerHeader className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-4 top-4 h-8 w-8"
+              onClick={handleAttemptClose}
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </Button>
             <DrawerTitle>Edit Artwork</DrawerTitle>
             <DrawerDescription>Update the details of your artwork</DrawerDescription>
           </DrawerHeader>
@@ -649,9 +678,13 @@ export const EditArtworkDrawer = ({
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Artwork
               </Button>
-              <DrawerClose asChild>
-                <Button variant="outline" onClick={onClose}>Cancel</Button>
-              </DrawerClose>
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={handleAttemptClose}
+              >
+                Cancel
+              </Button>
             </DrawerFooter>
           </form>
         </DrawerContent>
@@ -673,6 +706,33 @@ export const EditArtworkDrawer = ({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {loading ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard Changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes to this artwork. Are you sure you want to leave?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+            <Button
+              variant="default"
+              onClick={handleSaveAndClose}
+              disabled={loading}
+            >
+              Save Changes
+            </Button>
+            <AlertDialogAction
+              onClick={handleDiscardAndClose}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Discard
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
