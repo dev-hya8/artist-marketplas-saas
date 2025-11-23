@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Star, Archive, Trash2, RotateCcw, Trash } from "lucide-react";
+import { Star, Archive, Trash2, RotateCcw, Trash, Mail } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
@@ -198,6 +198,19 @@ export const InquiriesTab = () => {
           <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
             {activeTab !== "trash" ? (
               <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    const artworkTitle = inquiry.artworks ? inquiry.artworks.title : 'your inquiry';
+                    const subject = `Re: Inquiry about ${artworkTitle}`;
+                    const body = `Hi ${inquiry.name},\n\nThank you for your interest in ${artworkTitle}.\n\n(Original Message: "${inquiry.message}")`;
+                    window.location.href = `mailto:${inquiry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  }}
+                >
+                  <Mail className="h-4 w-4 mr-1" />
+                  Reply
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
