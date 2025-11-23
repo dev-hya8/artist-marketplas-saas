@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
 
-  const fetchGalleryImages = async () => {
+  const fetchGalleryImages = useCallback(async () => {
     if (!artworkId) return;
 
     setLoading(true);
@@ -42,13 +42,11 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [artworkId]);
 
   useEffect(() => {
-    if (artworkId) {
-      fetchGalleryImages();
-    }
-  }, [artworkId]);
+    fetchGalleryImages();
+  }, [fetchGalleryImages]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
