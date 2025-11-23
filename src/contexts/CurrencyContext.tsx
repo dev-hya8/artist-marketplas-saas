@@ -103,4 +103,44 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
       return `${fromSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${fromCurrency}`;
     }
     
-    const toCurrencyI
+    const toCurrencyInfo = CURRENCIES.find(c => c.code === currencyCode);
+    const toSymbol = toCurrencyInfo?.symbol || "$";
+    
+    if (currencyCode === fromCurrency) {
+      return `${toSymbol}${Math.round(price).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    let priceInUSD = price;
+    
+    if (fromCurrency !== "USD") {
+      const fromRate = FALLBACK_RATES[fromCurrency] || 1;
+      priceInUSD = price / fromRate;
+    }
+    
+    if (currencyCode === "USD") {
+      const finalValue = Math.round(priceInUSD);
+      return `${toSymbol}${finalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    const converted = Math.round(priceInUSD * exchangeRate);
+    return `${toSymbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  }, [currencyCode, exchangeRate, isRateFailed]);
+
+  const currencySymbol = CURRENCIES.find(c => c.code === currencyCode)?.symbol || "$";
+
+  return (
+    <CurrencyContext.Provider value={{ currencyCode, currencySymbol, convertPrice, setCurrency, exchangeRate, isRateFailed }}>
+      {children}
+    </CurrencyContext.Provider>
+  );
+};
+
+export const useCurrency = () => {
+  const context = useContext(CurrencyContext);
+  if (!context) {
+    throw new Error("useCurrency must be used within CurrencyProvider");
+  }
+  return context;
+};
+
+export { CURRENCIES };
