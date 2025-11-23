@@ -55,18 +55,18 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
           </div>
         )}
       </div>
-      <CardContent className="p-4">
+      <CardContent className="p-3 md:p-4">
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
-            <h3 className="font-semibold text-lg line-clamp-2">{artwork.title}</h3>
+            <h3 className="font-semibold text-sm md:text-lg line-clamp-2">{artwork.title}</h3>
             {formatDimensions() && (
-              <p className="text-sm text-muted-foreground">{formatDimensions()}</p>
+              <p className="text-xs md:text-sm text-muted-foreground">{formatDimensions()}</p>
             )}
           </div>
         </div>
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">
-            <p className="text-xl font-bold">
+            <p className="text-base md:text-xl font-bold">
               {artwork.price ? convertPrice(Number(artwork.price), artwork.base_currency || "USD") : "N/A"}
             </p>
             {artwork.price && !isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
@@ -75,7 +75,7 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
               </p>
             )}
           </div>
-          <Badge className={`${statusColors[artwork.status]} px-3 py-1 text-sm font-medium`}>{artwork.status}</Badge>
+          <Badge className={`${statusColors[artwork.status]} px-2 py-0.5 md:px-3 md:py-1 text-xs md:text-sm font-medium shrink-0`}>{artwork.status}</Badge>
         </div>
       </CardContent>
     </Card>
