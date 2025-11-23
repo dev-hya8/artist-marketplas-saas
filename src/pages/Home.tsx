@@ -32,12 +32,9 @@ export default function Home() {
     fetchArtworks();
   }, []);
 
-  // Refetch when currency changes to trigger re-render with new prices
+  // Debug: Log when currency changes in Home page
   useEffect(() => {
-    if (artworks.length > 0) {
-      // Trigger re-render when currency changes
-      setArtworks([...artworks]);
-    }
+    console.log('Home page currency updated:', currencyCode);
   }, [currencyCode]);
 
   const fetchArtworks = async () => {
@@ -139,9 +136,16 @@ export default function Home() {
                     {artwork.status === "Available" && (
                       <div className="flex items-center justify-between pt-2">
                         {artwork.price && (
-                          <p className="text-base font-light">
-                            {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-base font-light">
+                              {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
+                            </p>
+                            {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
+                              <p className="text-xs text-muted-foreground">
+                                {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         )}
                         <Button 
                           variant="outline" 
@@ -199,9 +203,16 @@ export default function Home() {
 
                       <div className="space-y-1 pt-2">
                         {artwork.current_bid && (
-                          <p className="text-base font-light">
-                            Current Bid: {convertPrice(Number(artwork.current_bid), artwork.base_currency || "USD")}
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-base font-light">
+                              Current Bid: {convertPrice(Number(artwork.current_bid), artwork.base_currency || "USD")}
+                            </p>
+                            {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
+                              <p className="text-xs text-muted-foreground">
+                                {artwork.base_currency || "USD"} {artwork.current_bid.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         )}
                         
                         {artwork.auction_end_time && !ended && (
