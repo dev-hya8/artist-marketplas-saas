@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Star, Archive, Trash2, RotateCcw, Trash, Mail } from "lucide-react";
+import { Star, Archive, Trash2, RotateCcw, Trash, Mail, Mail as MailOpen, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
@@ -44,6 +44,7 @@ interface Inquiry {
 
 export const InquiriesTab = () => {
   const [activeTab, setActiveTab] = useState("inbox");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: inquiries, isLoading } = useQuery({
@@ -141,8 +142,32 @@ export const InquiriesTab = () => {
   });
 
   const handleCardClick = (inquiry: Inquiry) => {
-    if (!inquiry.is_read) {
-      markAsReadMutation.mutate(inquiry.id);
+    // Toggle expand/collapse
+    if (expandedId === inquiry.id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(inquiry.id);
+      // Auto-mark as read when expanded
+      if (!inquiry.is_read) {
+        markAsReadMutation.mutate(inquiry.id);
+      }
+    }
+  };
+
+  const handleToggleRead = async (e: React.MouseEvent, inquiry: Inquiry) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from("inquiries")
+        .update({ is_read: !inquiry.is_read })
+        .eq("id", inquiry.id);
+      
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ["inquiries"] });
+        queryClient.invalidateQueries({ queryKey: ["unreadInquiriesCount"] });
+      }
+    } catch (error) {
+      console.error("Error toggling read status:", error);
     }
   };
 
@@ -150,127 +175,181 @@ export const InquiriesTab = () => {
     return <div className="text-center text-muted-foreground py-12">Loading inquiries...</div>;
   }
 
-  const renderInquiryCard = (inquiry: Inquiry) => (
-    <Card 
-      key={inquiry.id} 
-      className="relative cursor-pointer transition-colors hover:bg-accent/50"
-      onClick={() => handleCardClick(inquiry)}
-    >
-      {!inquiry.is_read && (
-        <div className="absolute top-4 left-4 w-2 h-2 bg-blue-500 rounded-full" />
-      )}
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1 pl-4">
-            {inquiry.artworks?.image_url && (
-              <img 
-                src={inquiry.artworks.image_url} 
-                alt={inquiry.artworks.title}
-                className="w-12 h-12 object-cover rounded"
-              />
-            )}
-            <div className="space-y-1 flex-1">
-              <CardTitle className={`text-lg ${!inquiry.is_read ? 'font-bold' : ''}`}>
-                {inquiry.name}
-              </CardTitle>
-              <CardDescription className={!inquiry.is_read ? 'font-semibold' : ''}>
-                {inquiry.email}
-              </CardDescription>
+  const renderInquiryCard = (inquiry: Inquiry) => {
+    const isExpanded = expandedId === inquiry.id;
+    
+    return (
+      <Card 
+        key={inquiry.id} 
+        className={`relative transition-all duration-200 ${
+          isExpanded 
+            ? 'shadow-lg' 
+            : inquiry.is_read 
+              ? 'bg-background hover:bg-accent/30 cursor-pointer' 
+              : 'bg-muted/50 hover:bg-muted cursor-pointer'
+        }`}
+      >
+        {!inquiry.is_read && (
+          <div className="absolute top-4 left-4 w-2 h-2 bg-primary rounded-full animate-pulse" />
+        )}
+        
+        <CardHeader onClick={() => handleCardClick(inquiry)} className="cursor-pointer">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1 pl-4">
+              {inquiry.artworks?.image_url && (
+                <img 
+                  src={inquiry.artworks.image_url} 
+                  alt={inquiry.artworks.title}
+                  className="w-12 h-12 object-cover rounded"
+                />
+              )}
+              <div className="space-y-1 flex-1">
+                <CardTitle className={`text-lg ${!inquiry.is_read ? 'font-bold' : 'font-medium'}`}>
+                  {inquiry.name}
+                </CardTitle>
+                <CardDescription className={!inquiry.is_read ? 'font-semibold text-foreground' : ''}>
+                  {inquiry.email}
+                </CardDescription>
+                <p className="text-xs text-muted-foreground">
+                  {inquiry.artworks ? inquiry.artworks.title : 'General Inquiry'}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {formatDistanceToNow(new Date(inquiry.created_at), { addSuffix: true })}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <p className="text-sm font-medium">
-            Ref: <span className="text-muted-foreground">
-              {inquiry.artworks ? inquiry.artworks.title : 'General Inquiry'}
-            </span>
-          </p>
-          <p className={`text-sm text-muted-foreground whitespace-pre-wrap ${!inquiry.is_read ? 'font-medium' : ''}`}>
-            {inquiry.message}
-          </p>
-          <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-            {activeTab !== "trash" ? (
-              <>
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => handleToggleRead(e, inquiry)}
+              >
+                {inquiry.is_read ? (
+                  <MailOpen className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Mail className="h-4 w-4 text-primary" />
+                )}
+              </Button>
+              {isExpanded && (
                 <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => {
-                    const artworkTitle = inquiry.artworks ? inquiry.artworks.title : 'your inquiry';
-                    const subject = `Re: Inquiry about ${artworkTitle}`;
-                    const body = `Hi ${inquiry.name},\n\nThank you for your interest in ${artworkTitle}.\n\n(Original Message: "${inquiry.message}")`;
-                    window.location.href = `mailto:${inquiry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedId(null);
                   }}
                 >
-                  <Mail className="h-4 w-4 mr-1" />
-                  Reply
+                  <X className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleFavoriteMutation.mutate({ 
-                    id: inquiry.id, 
-                    isFavorite: inquiry.is_favorite 
-                  })}
-                >
-                  <Star className={`h-4 w-4 ${inquiry.is_favorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateStatusMutation.mutate({ 
-                    id: inquiry.id, 
-                    status: 'archived' 
-                  })}
-                >
-                  <Archive className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateStatusMutation.mutate({ 
-                    id: inquiry.id, 
-                    status: 'trash' 
-                  })}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateStatusMutation.mutate({ 
-                    id: inquiry.id, 
-                    status: 'inbox' 
-                  })}
-                >
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Restore
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => deletePermanentlyMutation.mutate(inquiry.id)}
-                >
-                  <Trash className="h-4 w-4 mr-1" />
-                  Delete Forever
-                </Button>
-              </>
-            )}
+              )}
+              {!isExpanded && (
+                <Badge variant="outline">
+                  {formatDistanceToNow(new Date(inquiry.created_at), { addSuffix: true })}
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+          
+          {!isExpanded && (
+            <p className="text-sm text-muted-foreground pl-4 line-clamp-1 mt-2">
+              {inquiry.message}
+            </p>
+          )}
+        </CardHeader>
+        
+        {isExpanded && (
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Received {formatDistanceToNow(new Date(inquiry.created_at), { addSuffix: true })}</span>
+                <Badge variant="outline">{inquiry.status}</Badge>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {inquiry.message}
+                </p>
+              </div>
+              
+              <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                {activeTab !== "trash" ? (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        const artworkTitle = inquiry.artworks ? inquiry.artworks.title : 'your inquiry';
+                        const subject = `Re: Inquiry about ${artworkTitle}`;
+                        const body = `Hi ${inquiry.name},\n\nThank you for your interest in ${artworkTitle}.\n\n(Original Message: "${inquiry.message}")`;
+                        window.location.href = `mailto:${inquiry.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                      }}
+                    >
+                      <Mail className="h-4 w-4 mr-1" />
+                      Reply
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleFavoriteMutation.mutate({ 
+                        id: inquiry.id, 
+                        isFavorite: inquiry.is_favorite 
+                      })}
+                    >
+                      <Star className={`h-4 w-4 mr-1 ${inquiry.is_favorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      {inquiry.is_favorite ? 'Unfavorite' : 'Favorite'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateStatusMutation.mutate({ 
+                        id: inquiry.id, 
+                        status: 'archived' 
+                      })}
+                    >
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateStatusMutation.mutate({ 
+                        id: inquiry.id, 
+                        status: 'trash' 
+                      })}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Move to Trash
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateStatusMutation.mutate({ 
+                        id: inquiry.id, 
+                        status: 'inbox' 
+                      })}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Restore
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deletePermanentlyMutation.mutate(inquiry.id)}
+                    >
+                      <Trash className="h-4 w-4 mr-1" />
+                      Delete Forever
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    );
+  };
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
