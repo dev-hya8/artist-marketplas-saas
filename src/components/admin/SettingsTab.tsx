@@ -4,8 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -20,9 +19,37 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const SettingsTab = () => {
-  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const navigate = useNavigate();
+
+  // Initialize dark mode from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const isDark = savedTheme === "dark";
+    setIsDarkMode(isDark);
+    
+    // Apply the theme to the document
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDarkMode(checked);
+    
+    // Save to localStorage
+    localStorage.setItem("theme", checked ? "dark" : "light");
+    
+    // Apply to document
+    if (checked) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const handleSignOut = async () => {
     setLoading(true);
@@ -79,8 +106,8 @@ export const SettingsTab = () => {
             </div>
             <Switch
               id="dark-mode"
-              checked={theme === "dark"}
-              onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              checked={isDarkMode}
+              onCheckedChange={toggleDarkMode}
             />
           </div>
         </CardContent>
