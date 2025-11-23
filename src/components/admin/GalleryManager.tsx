@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, X, ChevronLeft, ChevronRight, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface GalleryManagerProps {
   artworkId: string | null;
@@ -27,7 +28,9 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const fetchGalleryImages = useCallback(async () => {
     if (!artworkId) return;
 
-    setLoading(true);
+    // Don't show global loading spinner on refetch to prevent flickering
+    if (galleryImages.length === 0) setLoading(true);
+    
     try {
       const { data, error } = await supabase
         .from("artwork_gallery")
@@ -48,18 +51,15 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     fetchGalleryImages();
   }, [fetchGalleryImages]);
 
+  // Handle Keyboard Navigation for Lightbox
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!lightboxImage) return;
       
-      if (e.key === "ArrowLeft" && lightboxIndex > 0) {
-        const newIndex = lightboxIndex - 1;
-        setLightboxIndex(newIndex);
-        setLightboxImage(galleryImages[newIndex].image_url);
-      } else if (e.key === "ArrowRight" && lightboxIndex < galleryImages.length - 1) {
-        const newIndex = lightboxIndex + 1;
-        setLightboxIndex(newIndex);
-        setLightboxImage(galleryImages[newIndex].image_url);
+      if (e.key === "ArrowLeft") {
+        handlePreviousImage();
+      } else if (e.key === "ArrowRight") {
+        handleNextImage();
       } else if (e.key === "Escape") {
         setLightboxImage(null);
       }
@@ -162,48 +162,42 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
     const confirmed = window.confirm("Are you sure you want to remove this image?");
     if (!confirmed) return;
 
+    // 1. OPTIMISTIC UPDATE: Remove from UI immediately
+    const previousImages = [...galleryImages]; // Keep a backup in case of error
+    setGalleryImages(current => current.filter(img => img.id !== imageId));
+
     try {
+      // 2. Delete from Storage
       const urlParts = imageUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
 
-      console.log('Attempting to delete:', fileName);
-      console.log('Full URL:', imageUrl);
-
-      const { data: storageData, error: storageError } = await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('artwork_images')
         .remove([fileName]);
 
       if (storageError) {
         console.error("Storage deletion error:", storageError);
-        toast({
-          title: "Storage Error",
-          description: `Failed to delete image from storage: ${storageError.message}`,
-          variant: "destructive",
-        });
-      } else {
-        console.log("Storage deletion response:", storageData);
       }
 
+      // 3. Delete from Database
       const { error: dbError } = await supabase
         .from("artwork_gallery")
         .delete()
         .eq("id", imageId);
 
-      if (dbError) {
-        console.error("Database deletion error:", dbError);
-        throw dbError;
-      }
+      if (dbError) throw dbError;
 
       toast({
         title: "Success",
-        description: storageError 
-          ? "Image removed from gallery (file may still exist in storage)" 
-          : "Image removed successfully",
+        description: "Image removed successfully",
       });
       
-      await fetchGalleryImages();
     } catch (error: any) {
       console.error("Error deleting gallery image:", error);
+      
+      // Revert UI on error
+      setGalleryImages(previousImages);
+      
       toast({
         title: "Error",
         description: error.message || "Failed to delete gallery image",
@@ -228,44 +222,60 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
 
   return (
     <div className="space-y-4">
+      {/* Upload Section */}
       <div className="space-y-2">
-        <Label htmlFor="gallery-upload">Additional Views</Label>
-        <div>
-          <Input
+        <div className="flex items-center justify-between">
+          <Label htmlFor="gallery-upload">Additional Views</Label>
+          {!isAtMaxCapacity && galleryImages.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {galleryImages.length} of {maxImages}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+           <Input
             id="gallery-upload"
             type="file"
             accept="image/*"
             onChange={handleFileUpload}
             disabled={uploading || isAtMaxCapacity}
+            className="hidden"
           />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => document.getElementById('gallery-upload')?.click()}
+            disabled={uploading || isAtMaxCapacity}
+            className="w-full border-dashed"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            {uploading ? "Uploading..." : isAtMaxCapacity ? "Max Limit Reached" : "Add Gallery Image"}
+          </Button>
         </div>
-        {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+
         {isAtMaxCapacity && (
           <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-            Maximum 4 additional photos reached (5 total)
-          </p>
-        )}
-        {!isAtMaxCapacity && galleryImages.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {galleryImages.length} of {maxImages} additional images uploaded
+            Maximum 4 additional photos reached
           </p>
         )}
       </div>
 
-      {loading ? (
+      {/* Grid Display */}
+      {loading && galleryImages.length === 0 ? (
         <p className="text-sm text-muted-foreground">Loading gallery...</p>
       ) : galleryImages.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           {galleryImages.map((image, index) => (
-            <div key={image.id} className="relative group">
+            <div key={image.id} className="relative group aspect-square">
               <div 
-                className="w-full rounded-md border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                className="w-full h-full rounded-md border overflow-hidden cursor-pointer hover:opacity-90 transition-opacity bg-muted"
                 onClick={() => openLightbox(image.image_url, index)}
               >
                 <img
                   src={image.image_url}
                   alt="Gallery"
-                  className="w-full h-auto max-h-[300px] object-contain"
+                  className="w-full h-full object-cover"
                 />
               </div>
               
@@ -275,57 +285,53 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                   e.stopPropagation();
                   handleDeleteImage(image.id, image.image_url);
                 }}
-                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 hover:bg-red-600 hover:text-white text-red-600 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center z-10 shadow-md"
-                aria-label="Delete image"
+                className="absolute top-1 right-1 p-1.5 rounded-full bg-white shadow-sm hover:bg-red-50 text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all z-10"
+                title="Remove image"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
           ))}
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No additional images yet</p>
-      )}
+      ) : null}
 
+      {/* Lightbox Modal */}
       <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
-        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden" aria-describedby={undefined}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none" aria-describedby={undefined}>
           {lightboxImage && (
-            <div className="relative w-full bg-black">
+            <div className="relative w-full h-[80vh] flex items-center justify-center">
               <img
                 src={lightboxImage}
                 alt="Full size preview"
-                className="w-full h-auto max-h-[90vh] object-contain"
+                className="max-w-full max-h-full object-contain"
               />
               
               <button
                 onClick={() => setLightboxImage(null)}
-                className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors z-20"
-                aria-label="Close"
+                className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-50"
               >
-                <X className="h-5 w-5" />
+                <X className="h-6 w-6" />
               </button>
               
               {lightboxIndex > 0 && (
                 <button
                   onClick={handlePreviousImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors z-10"
-                  aria-label="Previous image"
+                  className="absolute left-4 p-3 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-40"
                 >
-                  <ChevronLeft className="h-6 w-6" />
+                  <ChevronLeft className="h-8 w-8" />
                 </button>
               )}
               
               {lightboxIndex < galleryImages.length - 1 && (
                 <button
                   onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition-colors z-10"
-                  aria-label="Next image"
+                  className="absolute right-4 p-3 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-40"
                 >
-                  <ChevronRight className="h-6 w-6" />
+                  <ChevronRight className="h-8 w-8" />
                 </button>
               )}
               
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1 rounded-full text-sm">
                 {lightboxIndex + 1} / {galleryImages.length}
               </div>
             </div>
