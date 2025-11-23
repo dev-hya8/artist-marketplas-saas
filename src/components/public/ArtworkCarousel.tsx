@@ -48,12 +48,13 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
   // If only one image (main image), show it without carousel
   if (allImages.length <= 1) {
     return (
-      <div className="relative overflow-hidden bg-muted">
+      <div className="relative overflow-hidden bg-muted flex items-center justify-center" style={{ maxHeight: '500px' }}>
         {mainImageUrl ? (
           <img
             src={mainImageUrl}
             alt={artworkTitle}
-            className="w-full h-auto object-cover"
+            className="w-full h-auto object-contain"
+            style={{ maxHeight: '500px' }}
           />
         ) : (
           <div className="aspect-square flex items-center justify-center bg-muted">
@@ -66,15 +67,16 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
 
   // Show carousel if multiple images
   return (
-    <div className="relative overflow-hidden bg-muted group">
+    <div className="relative overflow-hidden bg-muted group flex items-center justify-center" style={{ maxHeight: '500px' }}>
       <Carousel className="w-full">
         <CarouselContent>
           {allImages.map((image, index) => (
-            <CarouselItem key={image.id}>
+            <CarouselItem key={image.id} className="flex items-center justify-center">
               <img
                 src={image.image_url}
                 alt={`${artworkTitle} - View ${index + 1}`}
-                className="w-full h-auto object-cover"
+                className="w-full h-auto object-contain"
+                style={{ maxHeight: '500px' }}
               />
             </CarouselItem>
           ))}
