@@ -19,7 +19,7 @@ export default function Home() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [bidModalOpen, setBidModalOpen] = useState(false);
-  const { convertPrice, currencyCode } = useCurrency();
+  const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
 
   const formatDimensions = (dimensions: string | null) => {

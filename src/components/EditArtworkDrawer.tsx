@@ -55,7 +55,7 @@ export const EditArtworkDrawer = ({
   onClose,
 }: EditArtworkDrawerProps) => {
   const { toast } = useToast();
-  const { convertPrice, currencyCode } = useCurrency();
+  const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showSoldDialog, setShowSoldDialog] = useState(false);
@@ -399,7 +399,7 @@ export const EditArtworkDrawer = ({
                   </SelectContent>
                 </Select>
               </div>
-              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== formData.base_currency && (
+              {formData.price && parseFloat(formData.price) > 0 && !isRateFailed && currencyCode !== formData.base_currency && (
                 <p className="text-xs text-muted-foreground">
                   ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
                 </p>
@@ -548,7 +548,7 @@ export const EditArtworkDrawer = ({
                 value={soldData.final_price}
                 onChange={(e) => setSoldData({ ...soldData, final_price: e.target.value })}
               />
-              {soldData.final_price && parseFloat(soldData.final_price) > 0 && currencyCode !== (artwork.base_currency || "USD") && (
+              {soldData.final_price && parseFloat(soldData.final_price) > 0 && !isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
                 <p className="text-xs text-muted-foreground">
                   ≈ {convertPrice(parseFloat(soldData.final_price), artwork.base_currency || "USD")}
                 </p>

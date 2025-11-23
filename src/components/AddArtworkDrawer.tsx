@@ -37,7 +37,7 @@ export const AddArtworkDrawer = ({
   onSuccess,
 }: AddArtworkDrawerProps) => {
   const { toast } = useToast();
-  const { convertPrice, currencyCode, exchangeRate } = useCurrency();
+  const { convertPrice, currencyCode, exchangeRate, isRateFailed } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -366,7 +366,7 @@ export const AddArtworkDrawer = ({
                   </SelectContent>
                 </Select>
               </div>
-              {formData.price && parseFloat(formData.price) > 0 && currencyCode !== formData.base_currency && (
+              {formData.price && parseFloat(formData.price) > 0 && !isRateFailed && currencyCode !== formData.base_currency && (
                 <p className="text-xs text-muted-foreground">
                   ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
                 </p>
