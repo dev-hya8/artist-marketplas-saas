@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Trash2 } from "lucide-react";
+import { ShoppingCart, Trash2, Upload } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables, Database } from "@/integrations/supabase/types";
@@ -57,6 +57,7 @@ export const EditArtworkDrawer = ({
   const { toast } = useToast();
   const { convertPrice, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showSoldDialog, setShowSoldDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [soldData, setSoldData] = useState({
@@ -91,6 +92,78 @@ export const EditArtworkDrawer = ({
       provenance_log: artwork.provenance_log || "",
     });
   }, [artwork.id]);
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Upload new image first
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('artwork_images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('artwork_images')
+        .getPublicUrl(filePath);
+
+      // Delete old image if it exists
+      if (artwork.image_url) {
+        try {
+          const urlParts = artwork.image_url.split('/');
+          const oldFileName = urlParts[urlParts.length - 1];
+          
+          const { error: deleteError } = await supabase.storage
+            .from('artwork_images')
+            .remove([oldFileName]);
+
+          if (deleteError) {
+            console.warn("Could not delete old image:", deleteError);
+          }
+        } catch (deleteError) {
+          console.warn("Error deleting old image:", deleteError);
+        }
+      }
+
+      // Update form data with new URL
+      setFormData({ ...formData, image_url: publicUrl });
+      
+      toast({
+        title: "Success",
+        description: "Thumbnail updated successfully",
+      });
+
+      e.target.value = "";
+    } catch (error: any) {
+      console.error("Thumbnail upload error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload thumbnail",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,14 +322,42 @@ export const EditArtworkDrawer = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-image_url" className="text-base font-semibold">Main Thumbnail</Label>
-              <Input
-                id="edit-image_url"
-                type="url"
-                placeholder="https://..."
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              />
+              <Label className="text-base font-semibold">Main Thumbnail</Label>
+              
+              {formData.image_url && (
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted">
+                  <img 
+                    src={formData.image_url} 
+                    alt={formData.title}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <Input
+                  id="edit-thumbnail-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleThumbnailUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('edit-thumbnail-upload')?.click()}
+                  disabled={uploading}
+                  className="w-full"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploading ? "Uploading..." : formData.image_url ? "Change Thumbnail" : "Upload Thumbnail"}
+                </Button>
+              </div>
+              
+              {uploading && (
+                <p className="text-sm text-muted-foreground">Uploading and replacing image...</p>
+              )}
             </div>
 
             <div className="space-y-2">
