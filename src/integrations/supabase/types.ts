@@ -26,12 +26,14 @@ export type Database = {
           cv_education: string | null
           cv_exhibitions: string | null
           display_name: string
+          email_alerts_enabled: boolean | null
           facebook_handle: string | null
           id: string
           instagram_handle: string | null
           measurement_unit: string | null
           phone_number: string | null
           primary_contact_method: string | null
+          public_profile_enabled: boolean | null
           twitter_handle: string | null
           upcoming_events: string | null
           updated_at: string | null
@@ -47,12 +49,14 @@ export type Database = {
           cv_education?: string | null
           cv_exhibitions?: string | null
           display_name?: string
+          email_alerts_enabled?: boolean | null
           facebook_handle?: string | null
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
           phone_number?: string | null
           primary_contact_method?: string | null
+          public_profile_enabled?: boolean | null
           twitter_handle?: string | null
           upcoming_events?: string | null
           updated_at?: string | null
@@ -68,12 +72,14 @@ export type Database = {
           cv_education?: string | null
           cv_exhibitions?: string | null
           display_name?: string
+          email_alerts_enabled?: boolean | null
           facebook_handle?: string | null
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
           phone_number?: string | null
           primary_contact_method?: string | null
+          public_profile_enabled?: boolean | null
           twitter_handle?: string | null
           upcoming_events?: string | null
           updated_at?: string | null

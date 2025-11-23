@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Download, Lock } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,37 +19,180 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const SettingsTab = () => {
   const [loading, setLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
+  const [publicProfileEnabled, setPublicProfileEnabled] = useState(true);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+  });
   const navigate = useNavigate();
 
-  // Initialize dark mode from localStorage on mount
+  // Initialize dark mode from localStorage and fetch settings
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const isDark = savedTheme === "dark";
     setIsDarkMode(isDark);
     
-    // Apply the theme to the document
     if (isDark) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("artist_settings")
+        .select("email_alerts_enabled, public_profile_enabled")
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setEmailAlertsEnabled(data.email_alerts_enabled ?? true);
+        setPublicProfileEnabled(data.public_profile_enabled ?? true);
+      }
+    } catch (error: any) {
+      console.error("Error fetching settings:", error);
+    }
+  };
+
+  const updateSetting = async (field: string, value: boolean) => {
+    try {
+      const { data: existing } = await supabase
+        .from("artist_settings")
+        .select("id")
+        .maybeSingle();
+
+      if (!existing) {
+        throw new Error("Settings not found");
+      }
+
+      const { error } = await supabase
+        .from("artist_settings")
+        .update({ [field]: value })
+        .eq("id", existing.id);
+
+      if (error) throw error;
+
+      toast.success("Setting updated successfully");
+    } catch (error: any) {
+      console.error("Error updating setting:", error);
+      toast.error(error.message || "Failed to update setting");
+    }
+  };
 
   const toggleDarkMode = (checked: boolean) => {
     setIsDarkMode(checked);
-    
-    // Save to localStorage
     localStorage.setItem("theme", checked ? "dark" : "light");
     
-    // Apply to document
     if (checked) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
+    }
+  };
+
+  const toggleEmailAlerts = (checked: boolean) => {
+    setEmailAlertsEnabled(checked);
+    updateSetting("email_alerts_enabled", checked);
+  };
+
+  const togglePublicProfile = (checked: boolean) => {
+    setPublicProfileEnabled(checked);
+    updateSetting("public_profile_enabled", checked);
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      toast.error("Please fill in all password fields");
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword
+      });
+
+      if (error) throw error;
+
+      toast.success("Password updated successfully");
+      setPasswordDialogOpen(false);
+      setPasswordForm({ currentPassword: "", newPassword: "" });
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      toast.error(error.message || "Failed to update password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportInventory = async () => {
+    try {
+      const { data: artworks, error } = await supabase
+        .from("artworks")
+        .select("title, price, base_currency, dimensions, dimension_unit, medium, status, location, created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Convert to CSV
+      const headers = ["Title", "Price", "Currency", "Dimensions", "Unit", "Medium", "Status", "Location", "Created"];
+      const rows = artworks.map(artwork => [
+        artwork.title || "",
+        artwork.price || "",
+        artwork.base_currency || "",
+        artwork.dimensions || "",
+        artwork.dimension_unit || "",
+        artwork.medium || "",
+        artwork.status || "",
+        artwork.location || "",
+        artwork.created_at ? new Date(artwork.created_at).toLocaleDateString() : ""
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ].join("\n");
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `artwork-inventory-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Inventory exported successfully");
+    } catch (error: any) {
+      console.error("Error exporting inventory:", error);
+      toast.error(error.message || "Failed to export inventory");
     }
   };
 
@@ -70,16 +215,7 @@ export const SettingsTab = () => {
   const handleDeleteAccount = async () => {
     setLoading(true);
     try {
-      // In a real implementation, you would call a Supabase edge function
-      // to properly delete the user account and all associated data
-      // For now, we'll just sign out and show a message
-      
       toast.error("Account deletion is not yet implemented. Please contact support.");
-      
-      // Example of what the implementation would look like:
-      // const { error } = await supabase.functions.invoke('delete-account');
-      // if (error) throw error;
-      
     } catch (error: any) {
       console.error("Error deleting account:", error);
       toast.error(error.message || "Failed to delete account");
@@ -109,6 +245,138 @@ export const SettingsTab = () => {
               checked={isDarkMode}
               onCheckedChange={toggleDarkMode}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+          <CardDescription>Manage your account security settings</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Change Password</Label>
+              <p className="text-sm text-muted-foreground">
+                Update your account password
+              </p>
+            </div>
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Change Password
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                  <DialogDescription>
+                    Enter your current password and choose a new one
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      placeholder="Enter new password (min 6 characters)"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleChangePassword} disabled={loading}>
+                    {loading ? "Updating..." : "Update Password"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Notifications Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+          <CardDescription>Manage how you receive updates</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="email-alerts">New Inquiry Alerts</Label>
+              <p className="text-sm text-muted-foreground">
+                Receive an email whenever someone sends an inquiry about your artwork
+              </p>
+            </div>
+            <Switch
+              id="email-alerts"
+              checked={emailAlertsEnabled}
+              onCheckedChange={toggleEmailAlerts}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Privacy & Visibility Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Privacy & Visibility</CardTitle>
+          <CardDescription>Control your public presence</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="public-profile">Public Profile</Label>
+              <p className="text-sm text-muted-foreground">
+                When off, your profile is hidden from the public gallery, but you can still access your dashboard
+              </p>
+            </div>
+            <Switch
+              id="public-profile"
+              checked={publicProfileEnabled}
+              onCheckedChange={togglePublicProfile}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Management Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Management</CardTitle>
+          <CardDescription>Export and manage your data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Export Inventory</Label>
+              <p className="text-sm text-muted-foreground">
+                Download a CSV file with all your artwork data
+              </p>
+            </div>
+            <Button variant="ghost" onClick={handleExportInventory}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
           </div>
         </CardContent>
       </Card>
