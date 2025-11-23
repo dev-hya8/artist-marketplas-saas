@@ -1,118 +1,103 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload } from "lucide-react";
-import { GalleryManager } from "@/components/admin/GalleryManager";
-import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
-import type { Tables, Database } from "@/integrations/supabase/types";
+import { Trash2, X, ChevronLeft, ChevronRight, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-type Artwork = Tables<"artworks">;
-type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
-
-interface EditArtworkDrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  artwork: Artwork;
-  onSuccess: () => void;
-  onClose: () => void;
+interface GalleryManagerProps {
+  artworkId: string | null;
+  onContentChange?: () => void; // NEW: Allow parent to know when changes happen
 }
 
-export const EditArtworkDrawer = ({
-  open,
-  onOpenChange,
-  artwork,
-  onSuccess,
-  onClose,
-}: EditArtworkDrawerProps) => {
+interface GalleryImage {
+  id: string;
+  image_url: string;
+  created_at: string;
+}
+
+interface PendingUpload {
+  id: string;
+  previewUrl: string;
+  file: File;
+}
+
+export const GalleryManager = ({ artworkId, onContentChange }: GalleryManagerProps) => {
   const { toast } = useToast();
-  const { convertPrice, currencyCode, isRateFailed } = useCurrency();
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
-  
-  // Function to check if dimensions contain unit keywords
-  const checkForUnits = (text: string): boolean => {
-    const unitKeywords = /\b(in|inch|inches|cm|ft|feet)\b/i;
-    return unitKeywords.test(text);
-  };
-  
-  const [formData, setFormData] = useState({
-    title: artwork.title,
-    image_url: artwork.image_url || "",
-    price: artwork.price?.toString() || "",
-    base_currency: artwork.base_currency || "USD",
-    status: artwork.status,
-    dimensions: artwork.dimensions || "",
-    dimension_unit: artwork.dimension_unit || "in",
-    depth: artwork.depth?.toString() || "",
-    medium: artwork.medium || "",
-    location: artwork.location || "",
-    provenance_log: artwork.provenance_log || "",
-  });
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const fetchGalleryImages = useCallback(async () => {
+    if (!artworkId) return;
+    if (galleryImages.length === 0) setLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from("artwork_gallery")
+        .select("*")
+        .eq("artwork_id", artworkId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setGalleryImages(data || []);
+    } catch (error: any) {
+      console.error("Error fetching gallery images:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [artworkId]);
 
   useEffect(() => {
-    setFormData({
-      title: artwork.title,
-      image_url: artwork.image_url || "",
-      price: artwork.price?.toString() || "",
-      base_currency: artwork.base_currency || "USD",
-      status: artwork.status,
-      dimensions: artwork.dimensions || "",
-      dimension_unit: artwork.dimension_unit || "in",
-      depth: artwork.depth?.toString() || "",
-      medium: artwork.medium || "",
-      location: artwork.location || "",
-      provenance_log: artwork.provenance_log || "",
-    });
-  }, [artwork.id]);
+    fetchGalleryImages();
+  }, [fetchGalleryImages]);
 
-  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!lightboxImage) return;
+      if (e.key === "ArrowLeft") handlePreviousImage();
+      else if (e.key === "ArrowRight") handleNextImage();
+      else if (e.key === "Escape") setLightboxImage(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxImage, lightboxIndex, galleryImages]);
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      e.target.value = "";
-      return;
+  const handlePreviousImage = () => {
+    if (lightboxIndex > 0) {
+      const newIndex = lightboxIndex - 1;
+      setLightboxIndex(newIndex);
+      setLightboxImage(galleryImages[newIndex].image_url);
     }
+  };
 
-    setUploading(true);
+  const handleNextImage = () => {
+    if (lightboxIndex < galleryImages.length - 1) {
+      const newIndex = lightboxIndex + 1;
+      setLightboxIndex(newIndex);
+      setLightboxImage(galleryImages[newIndex].image_url);
+    }
+  };
+
+  const openLightbox = (imageUrl: string, index: number) => {
+    setLightboxImage(imageUrl);
+    setLightboxIndex(index);
+  };
+
+  const uploadFile = async (file: File) => {
+    if (!artworkId) return;
+
+    const tempId = Math.random().toString(36).substring(7);
+    const previewUrl = URL.createObjectURL(file);
+    const newPendingUpload: PendingUpload = { id: tempId, previewUrl, file };
+
+    setPendingUploads(prev => [newPendingUpload, ...prev]);
+
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
@@ -128,440 +113,178 @@ export const EditArtworkDrawer = ({
         .from('artwork_images')
         .getPublicUrl(filePath);
 
-      // Attempt to delete old image if replacing
-      if (artwork.image_url) {
-        try {
-          const urlParts = artwork.image_url.split('/');
-          const oldFileName = urlParts[urlParts.length - 1];
-          
-          const { error: deleteError } = await supabase.storage
-            .from('artwork_images')
-            .remove([oldFileName]);
-
-          if (deleteError) {
-            console.warn("Could not delete old image:", deleteError);
-          }
-        } catch (deleteError) {
-          console.warn("Error deleting old image:", deleteError);
-        }
-      }
-
-      setFormData({ ...formData, image_url: publicUrl });
-      
-      toast({
-        title: "Success",
-        description: "Thumbnail updated successfully",
-      });
-
-      e.target.value = "";
-    } catch (error: any) {
-      console.error("Thumbnail upload error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload thumbnail",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // Logic to remove the main thumbnail from the UI (will be saved as null on update)
-  const handleRemoveThumbnail = () => {
-    setFormData({ ...formData, image_url: "" });
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("artworks")
-        .update({
-          title: formData.title,
-          image_url: formData.image_url || null,
-          price: formData.price ? parseFloat(formData.price) : null,
-          base_currency: formData.base_currency,
-          status: formData.status,
-          dimensions: formData.dimensions || null,
-          dimension_unit: formData.dimension_unit,
-          depth: formData.depth ? parseFloat(formData.depth) : null,
-          medium: formData.medium || null,
-          location: formData.location || null,
-          provenance_log: formData.provenance_log || null,
-        })
-        .eq("id", artwork.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Artwork updated successfully",
-      });
-      
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    setLoading(true);
-
-    try {
-      if (artwork.image_url) {
-        try {
-          const urlParts = artwork.image_url.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          
-          const { error: storageError } = await supabase.storage
-            .from('artwork_images')
-            .remove([fileName]);
-
-          if (storageError) {
-            console.error("Storage deletion error:", storageError);
-          }
-        } catch (storageError: any) {
-          console.error("Storage deletion error:", storageError);
-        }
-      }
-
       const { error: dbError } = await supabase
-        .from("artworks")
-        .delete()
-        .eq("id", artwork.id);
+        .from("artwork_gallery")
+        .insert({
+          artwork_id: artworkId,
+          image_url: publicUrl,
+        });
 
       if (dbError) throw dbError;
 
-      toast({
-        title: "Success",
-        description: "Artwork deleted successfully",
-      });
+      toast({ title: "Success", description: "Gallery image uploaded successfully" });
       
-      setShowDeleteDialog(false);
-      onSuccess();
-      onClose();
+      // NEW: Notify parent that a change occurred
+      if (onContentChange) onContentChange();
+
+      await fetchGalleryImages();
+      
     } catch (error: any) {
-      console.error("Artwork deletion error:", error);
+      console.error("Gallery image upload error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete artwork",
+        description: error.message || "Failed to upload gallery image",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setPendingUploads(prev => prev.filter(p => p.id !== tempId));
+      URL.revokeObjectURL(previewUrl);
     }
   };
 
-  // Check for changes to enable/disable the update button
-  const hasChanges = 
-    formData.title !== artwork.title ||
-    formData.image_url !== (artwork.image_url || "") ||
-    formData.price !== (artwork.price?.toString() || "") ||
-    formData.base_currency !== (artwork.base_currency || "USD") ||
-    formData.status !== artwork.status ||
-    formData.dimensions !== (artwork.dimensions || "") ||
-    formData.dimension_unit !== (artwork.dimension_unit || "in") ||
-    formData.depth !== (artwork.depth?.toString() || "") ||
-    formData.medium !== (artwork.medium || "") ||
-    formData.location !== (artwork.location || "") ||
-    formData.provenance_log !== (artwork.provenance_log || "");
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!artworkId) {
+      toast({
+        title: "Error",
+        description: "Please save the artwork first before adding gallery images",
+        variant: "destructive",
+      });
+      return;
+    }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const maxSize = 5 * 1024 * 1024;
+    
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+    } else {
+      uploadFile(file);
+    }
+    e.target.value = "";
+  };
+
+  const handleDeleteImage = async (imageId: string, imageUrl: string) => {
+    const confirmed = window.confirm("Are you sure you want to remove this image?");
+    if (!confirmed) return;
+
+    const previousImages = [...galleryImages];
+    setGalleryImages(current => current.filter(img => img.id !== imageId));
+
+    try {
+      try {
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const { error: storageError } = await supabase.storage.from('artwork_images').remove([fileName]);
+        if (storageError) console.warn("Storage delete failed:", storageError);
+      } catch (err) {
+        console.warn("Storage delete crashed:", err);
+      }
+
+      const { error: dbError } = await supabase
+        .from("artwork_gallery")
+        .delete()
+        .eq("id", imageId);
+
+      if (dbError) throw dbError;
+
+      toast({ title: "Success", description: "Image removed successfully" });
+      
+      // NEW: Notify parent that a change occurred
+      if (onContentChange) onContentChange();
+      
+    } catch (error: any) {
+      console.error("Error deleting gallery image:", error);
+      setGalleryImages(previousImages);
+      toast({
+        title: "Error",
+        description: "Could not remove image from database.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!artworkId) {
+    return (
+      <div className="space-y-2">
+        <Label>Additional Views</Label>
+        <p className="text-sm text-muted-foreground">Save the artwork first to add gallery images</p>
+      </div>
+    );
+  }
+
+  const totalImages = galleryImages.length + pendingUploads.length;
+  const maxImages = 4;
+  const isAtMaxCapacity = totalImages >= maxImages;
+  const isUploading = pendingUploads.length > 0;
 
   return (
-    <>
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Edit Artwork</DrawerTitle>
-            <DrawerDescription>Update the details of your artwork</DrawerDescription>
-          </DrawerHeader>
-          <form onSubmit={handleUpdate} className="px-4 space-y-4 max-h-[60vh] overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">Title *</Label>
-              <Input
-                id="edit-title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </div>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="gallery-upload">Additional Views</Label>
+          {!isAtMaxCapacity && totalImages > 0 && (
+            <span className="text-xs text-muted-foreground">{totalImages} of {maxImages}</span>
+          )}
+        </div>
+        <div className="flex gap-2">
+           <Input id="gallery-upload" type="file" accept="image/*" onChange={handleFileUpload} disabled={isUploading || isAtMaxCapacity} className="hidden" />
+          <Button type="button" variant="outline" onClick={() => document.getElementById('gallery-upload')?.click()} disabled={isUploading || isAtMaxCapacity} className="w-full border-dashed">
+            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            {isUploading ? "Uploading..." : isAtMaxCapacity ? "Max Limit Reached" : "Add Gallery Image"}
+          </Button>
+        </div>
+        {isAtMaxCapacity && (
+          <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">Maximum 4 additional photos reached</p>
+        )}
+      </div>
 
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">Main Thumbnail</Label>
-              
-              {formData.image_url && (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted group">
-                  <img 
-                    src={formData.image_url} 
-                    alt={formData.title}
-                    className="w-full h-full object-contain"
-                  />
-                  {/* Added Remove Button for Main Thumbnail */}
-                  <button
-                    type="button"
-                    onClick={handleRemoveThumbnail}
-                    className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    title="Remove Thumbnail"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+      {loading && galleryImages.length === 0 && pendingUploads.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Loading gallery...</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {pendingUploads.map((pending) => (
+            <div key={pending.id} className="relative group aspect-square">
+              <div className="w-full h-full rounded-md border overflow-hidden bg-muted relative">
+                <img src={pending.previewUrl} alt="Uploading preview" className="w-full h-full object-cover opacity-50" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              )}
-              
-              <div className="flex gap-2">
-                <Input
-                  id="edit-thumbnail-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleThumbnailUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('edit-thumbnail-upload')?.click()}
-                  disabled={uploading}
-                  className="w-full"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {uploading ? "Uploading..." : formData.image_url ? "Change Thumbnail" : "Upload Thumbnail"}
-                </Button>
               </div>
-              
-              {uploading && (
-                <p className="text-sm text-muted-foreground">Uploading and replacing image...</p>
-              )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-price">Price *</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="edit-price"
-                  type="number"
-                  step="1"
-                  min="0"
-                  placeholder="0"
-                  value={formData.price}
-                  onKeyDown={(e) => {
-                    // Block decimal point and comma
-                    if (e.key === '.' || e.key === ',') {
-                      e.preventDefault();
-                      toast({
-                        title: "Whole numbers only",
-                        description: "Please enter an integer value without decimals",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Allow empty or whole numbers only
-                    if (value === '' || /^\d+$/.test(value)) {
-                      setFormData({ ...formData, price: value });
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // Round any pasted decimal values
-                    const value = e.target.value;
-                    if (value && value.includes('.')) {
-                      const rounded = Math.round(parseFloat(value)).toString();
-                      setFormData({ ...formData, price: rounded });
-                      toast({
-                        title: "Value rounded",
-                        description: "Decimal values are not allowed. The price has been rounded to the nearest whole number.",
-                      });
-                    }
-                  }}
-                  className="flex-1"
-                  style={{
-                    appearance: 'textfield',
-                    MozAppearance: 'textfield',
-                    WebkitAppearance: 'none'
-                  }}
-                />
-                <Select
-                  value={formData.base_currency}
-                  onValueChange={(value) => setFormData({ ...formData, base_currency: value })}
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          ))}
+          {galleryImages.map((image, index) => {
+            const hasFailed = failedImages.has(image.id);
+            return (
+            <div key={image.id} className="relative group aspect-square">
+              <div className="w-full h-full rounded-md border overflow-hidden cursor-pointer hover:opacity-90 transition-opacity bg-muted flex items-center justify-center" onClick={() => !hasFailed && openLightbox(image.image_url, index)}>
+                {hasFailed ? <ImageIcon className="h-10 w-10 text-muted-foreground/50" /> : <img src={image.image_url} alt="Gallery" className="w-full h-full object-cover" onError={() => setFailedImages(prev => new Set(prev).add(image.id))} />}
               </div>
-              {formData.price && parseFloat(formData.price) > 0 && !isRateFailed && currencyCode !== formData.base_currency && (
-                <p className="text-xs text-muted-foreground">
-                  ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
-                </p>
-              )}
+              <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteImage(image.id, image.image_url); }} className="absolute top-1 right-1 p-1.5 rounded-full bg-white shadow-sm hover:bg-red-50 text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all z-10" title="Remove image">
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
+          )})}
+        </div>
+      )}
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Available">Available</SelectItem>
-                  <SelectItem value="Sold">Sold</SelectItem>
-                  <SelectItem value="On Loan">On Loan</SelectItem>
-                  <SelectItem value="Reserved">Reserved</SelectItem>
-                </SelectContent>
-              </Select>
+      <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none" aria-describedby={undefined}>
+          {lightboxImage && (
+            <div className="relative w-full h-[80vh] flex items-center justify-center">
+              <img src={lightboxImage} alt="Full size preview" className="max-w-full max-h-full object-contain" />
+              <button onClick={() => setLightboxImage(null)} className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-50"><X className="h-6 w-6" /></button>
+              {lightboxIndex > 0 && (<button onClick={handlePreviousImage} className="absolute left-4 p-3 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-40"><ChevronLeft className="h-8 w-8" /></button>)}
+              {lightboxIndex < galleryImages.length - 1 && (<button onClick={handleNextImage} className="absolute right-4 p-3 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-40"><ChevronRight className="h-8 w-8" /></button>)}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1 rounded-full text-sm">{lightboxIndex + 1} / {galleryImages.length}</div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-dimensions">Dimensions (H x W)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="edit-dimensions"
-                  placeholder="e.g. 24 x 36 (Enter numbers only)"
-                  value={formData.dimensions}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, dimensions: value });
-                    setDimensionUnitWarning(checkForUnits(value));
-                  }}
-                  className="flex-1"
-                />
-                <Select
-                  value={formData.dimension_unit}
-                  onValueChange={(value) => setFormData({ ...formData, dimension_unit: value })}
-                >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cm">cm</SelectItem>
-                    <SelectItem value="in">in</SelectItem>
-                    <SelectItem value="ft">ft</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {dimensionUnitWarning && (
-                <p className="text-sm text-amber-600 dark:text-amber-500">
-                  ⚠️ Please select the unit from the dropdown instead of typing it.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-depth">Depth (optional)</Label>
-              <Input
-                id="edit-depth"
-                type="number"
-                step="0.01"
-                placeholder="e.g., 2"
-                value={formData.depth}
-                onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">For 3D works/sculptures</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-medium">Medium</Label>
-              <Input
-                id="edit-medium"
-                placeholder="e.g., Oil on canvas"
-                value={formData.medium}
-                onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                placeholder="e.g., Studio, Gallery X"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-provenance">Provenance Log</Label>
-              <Textarea
-                id="edit-provenance"
-                placeholder="History of ownership..."
-                value={formData.provenance_log}
-                onChange={(e) => setFormData({ ...formData, provenance_log: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2 pt-4 border-t">
-              <Label className="text-base font-semibold">Gallery / Close-ups</Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                Add multiple images to showcase different angles and details
-              </p>
-              <GalleryManager artworkId={artwork.id} />
-            </div>
-
-            <DrawerFooter className="px-0 pb-4">
-              <Button type="submit" disabled={loading || !hasChanges}>
-                {loading ? "Updating..." : "Update Artwork"}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Artwork
-              </Button>
-              <DrawerClose asChild>
-                <Button variant="outline" onClick={onClose}>Cancel</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </form>
-        </DrawerContent>
-      </Drawer>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Artwork</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this artwork? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={loading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {loading ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
