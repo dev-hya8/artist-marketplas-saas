@@ -109,10 +109,24 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     return () => clearInterval(interval);
   }, [currencyCode]);
 
-  const setCurrency = (currency: string) => {
+  const setCurrency = async (currency: string) => {
     console.log(`CurrencyContext: Setting currency to ${currency}`);
     setCurrencyCode(currency);
-    // Currency is now managed in database, not localStorage
+    
+    // Save to database
+    try {
+      const currencyInfo = CURRENCIES.find(c => c.code === currency);
+      if (currencyInfo) {
+        const { error } = await supabase
+          .from("artist_settings")
+          .update({ currency_region: currencyInfo.region })
+          .eq("id", (await supabase.from("artist_settings").select("id").maybeSingle()).data?.id || "");
+        
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("Error saving currency preference:", error);
+    }
   };
 
   const convertPrice = useCallback((price: number, fromCurrency: string = "USD"): string => {

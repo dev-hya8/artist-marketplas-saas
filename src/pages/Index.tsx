@@ -1,8 +1,14 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Upload, User, MessageSquare, Settings, X } from "lucide-react";
+import { Plus, Upload, User, MessageSquare, Settings, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArtworkCard } from "@/components/ArtworkCard";
@@ -12,7 +18,7 @@ import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
 import { useToast } from "@/hooks/use-toast";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -26,6 +32,7 @@ const Index = () => {
   const [profileDrawerClosing, setProfileDrawerClosing] = useState(false);
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
+  const { currencyCode, setCurrency } = useCurrency();
 
   // Fetch artist avatar
   const fetchArtistAvatar = async () => {
@@ -90,6 +97,30 @@ const Index = () => {
               </h1>
               
               <div className="flex items-center gap-2">
+                {/* Currency Selector */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10"
+                    >
+                      <Globe className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {CURRENCIES.map((currency) => (
+                      <DropdownMenuItem
+                        key={currency.code}
+                        onClick={() => setCurrency(currency.code)}
+                        className={currencyCode === currency.code ? "bg-accent" : ""}
+                      >
+                        {currency.name} ({currency.symbol})
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {/* Profile Avatar - Direct Navigation */}
                 <Button 
                   variant={activeTab === "profile" ? "default" : "outline"}
