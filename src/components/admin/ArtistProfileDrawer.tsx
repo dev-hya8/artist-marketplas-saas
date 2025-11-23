@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Camera, Upload } from "lucide-react";
+import { User, Camera, Upload, Plus, Trash2, Facebook, Music } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,14 +17,16 @@ interface ArtistProfileDrawerProps {
 export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpdate }: ArtistProfileDrawerProps) => {
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [artistSettingsId, setArtistSettingsId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     contact_email: "",
     phone_number: "",
     instagram_handle: "",
     facebook_handle: "",
     twitter_handle: "",
-    cv_exhibitions: "",
-    upcoming_events: "",
+    tiktok_handle: "",
+    cv_exhibitions: [] as string[],
+    upcoming_events: [] as string[],
   });
 
   useEffect(() => {
@@ -37,21 +39,48 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     try {
       const { data, error } = await supabase
         .from("artist_settings")
-        .select("contact_email, phone_number, instagram_handle, facebook_handle, twitter_handle, cv_exhibitions, upcoming_events")
+        .select("id, contact_email, phone_number, instagram_handle, facebook_handle, twitter_handle, tiktok_handle, cv_exhibitions, upcoming_events")
         .limit(1)
         .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
+        setArtistSettingsId(data.id);
+        
+        // Parse exhibitions and events from JSON or text
+        let exhibitions: string[] = [];
+        let events: string[] = [];
+        
+        try {
+          if (data.cv_exhibitions) {
+            exhibitions = typeof data.cv_exhibitions === 'string' 
+              ? JSON.parse(data.cv_exhibitions)
+              : data.cv_exhibitions;
+          }
+        } catch {
+          exhibitions = data.cv_exhibitions ? [data.cv_exhibitions] : [];
+        }
+        
+        try {
+          if (data.upcoming_events) {
+            events = typeof data.upcoming_events === 'string'
+              ? JSON.parse(data.upcoming_events)
+              : data.upcoming_events;
+          }
+        } catch {
+          events = data.upcoming_events ? [data.upcoming_events] : [];
+        }
+        
         setFormData({
           contact_email: data.contact_email || "",
           phone_number: data.phone_number || "",
           instagram_handle: data.instagram_handle || "",
           facebook_handle: data.facebook_handle || "",
           twitter_handle: data.twitter_handle || "",
-          cv_exhibitions: data.cv_exhibitions || "",
-          upcoming_events: data.upcoming_events || "",
+          tiktok_handle: data.tiktok_handle || "",
+          cv_exhibitions: exhibitions,
+          upcoming_events: events,
         });
       }
     } catch (error: any) {
@@ -90,12 +119,22 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update database using upsert
-      const { error: upsertError } = await supabase
-        .from("artist_settings")
-        .upsert({ avatar_url: publicUrl }, { onConflict: 'id' });
+      // Update database - if we have an ID, update that specific row
+      if (artistSettingsId) {
+        const { error: updateError } = await supabase
+          .from("artist_settings")
+          .update({ avatar_url: publicUrl })
+          .eq('id', artistSettingsId);
 
-      if (upsertError) throw upsertError;
+        if (updateError) throw updateError;
+      } else {
+        // If no ID yet, create a new row
+        const { error: insertError } = await supabase
+          .from("artist_settings")
+          .insert({ avatar_url: publicUrl });
+
+        if (insertError) throw insertError;
+      }
 
       // Update parent component
       onAvatarUpdate(publicUrl);
@@ -114,20 +153,31 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     setLoading(true);
 
     try {
-      // Use upsert to handle both insert and update cases
-      const { error } = await supabase
-        .from("artist_settings")
-        .upsert({
-          contact_email: formData.contact_email,
-          phone_number: formData.phone_number,
-          instagram_handle: formData.instagram_handle,
-          facebook_handle: formData.facebook_handle,
-          twitter_handle: formData.twitter_handle,
-          cv_exhibitions: formData.cv_exhibitions,
-          upcoming_events: formData.upcoming_events,
-        }, { onConflict: 'id' });
+      const updateData = {
+        contact_email: formData.contact_email,
+        phone_number: formData.phone_number,
+        instagram_handle: formData.instagram_handle,
+        facebook_handle: formData.facebook_handle,
+        twitter_handle: formData.twitter_handle,
+        tiktok_handle: formData.tiktok_handle,
+        cv_exhibitions: JSON.stringify(formData.cv_exhibitions.filter(e => e.trim())),
+        upcoming_events: JSON.stringify(formData.upcoming_events.filter(e => e.trim())),
+      };
 
-      if (error) throw error;
+      if (artistSettingsId) {
+        const { error } = await supabase
+          .from("artist_settings")
+          .update(updateData)
+          .eq('id', artistSettingsId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("artist_settings")
+          .insert(updateData);
+
+        if (error) throw error;
+      }
 
       toast.success("Profile updated successfully!");
       onOpenChange(false);
@@ -137,6 +187,40 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
     } finally {
       setLoading(false);
     }
+  };
+
+  const addExhibition = () => {
+    setFormData({ ...formData, cv_exhibitions: [...formData.cv_exhibitions, ""] });
+  };
+
+  const removeExhibition = (index: number) => {
+    setFormData({
+      ...formData,
+      cv_exhibitions: formData.cv_exhibitions.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateExhibition = (index: number, value: string) => {
+    const newExhibitions = [...formData.cv_exhibitions];
+    newExhibitions[index] = value;
+    setFormData({ ...formData, cv_exhibitions: newExhibitions });
+  };
+
+  const addEvent = () => {
+    setFormData({ ...formData, upcoming_events: [...formData.upcoming_events, ""] });
+  };
+
+  const removeEvent = (index: number) => {
+    setFormData({
+      ...formData,
+      upcoming_events: formData.upcoming_events.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateEvent = (index: number, value: string) => {
+    const newEvents = [...formData.upcoming_events];
+    newEvents[index] = value;
+    setFormData({ ...formData, upcoming_events: newEvents });
   };
 
   return (
@@ -237,6 +321,23 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="facebook_handle">
+              <div className="flex items-center gap-2">
+                <Facebook className="h-4 w-4" />
+                Facebook
+              </div>
+            </Label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-sm">facebook.com/</span>
+              <Input
+                id="facebook_handle"
+                value={formData.facebook_handle}
+                onChange={(e) => setFormData({ ...formData, facebook_handle: e.target.value })}
+                placeholder="yourpage"
+              />
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="twitter_handle">X (Twitter)</Label>
@@ -250,6 +351,24 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
               />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tiktok_handle">
+              <div className="flex items-center gap-2">
+                <Music className="h-4 w-4" />
+                TikTok
+              </div>
+            </Label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">@</span>
+              <Input
+                id="tiktok_handle"
+                value={formData.tiktok_handle}
+                onChange={(e) => setFormData({ ...formData, tiktok_handle: e.target.value })}
+                placeholder="yourusername"
+              />
+            </div>
+          </div>
         </div>
 
         {/* CV / Exhibitions */}
@@ -257,14 +376,37 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
           <h3 className="text-lg font-semibold">CV / Exhibitions</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="cv_exhibitions">Exhibitions</Label>
-            <Textarea
-              id="cv_exhibitions"
-              value={formData.cv_exhibitions}
-              onChange={(e) => setFormData({ ...formData, cv_exhibitions: e.target.value })}
-              placeholder="List your exhibitions, one per line..."
-              rows={6}
-            />
+            <Label>Exhibitions</Label>
+            <div className="space-y-2">
+              {formData.cv_exhibitions.map((exhibition, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={exhibition}
+                    onChange={(e) => updateExhibition(index, e.target.value)}
+                    placeholder="Enter exhibition"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeExhibition(index)}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addExhibition}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Exhibition
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -273,14 +415,37 @@ export const ArtistProfileDrawer = ({ open, onOpenChange, avatarUrl, onAvatarUpd
           <h3 className="text-lg font-semibold">Upcoming Art Events</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="upcoming_events">Events</Label>
-            <Textarea
-              id="upcoming_events"
-              value={formData.upcoming_events}
-              onChange={(e) => setFormData({ ...formData, upcoming_events: e.target.value })}
-              placeholder="List your upcoming events, one per line..."
-              rows={6}
-            />
+            <Label>Events</Label>
+            <div className="space-y-2">
+              {formData.upcoming_events.map((event, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={event}
+                    onChange={(e) => updateEvent(index, e.target.value)}
+                    placeholder="Enter event"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeEvent(index)}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addEvent}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Event
+              </Button>
+            </div>
           </div>
         </div>
 
