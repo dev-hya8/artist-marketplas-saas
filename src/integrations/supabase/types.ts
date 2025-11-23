@@ -106,6 +106,7 @@ export type Database = {
       artworks: {
         Row: {
           auction_end_time: string | null
+          base_currency: string | null
           bid_history: Json | null
           buyer_email: string | null
           created_at: string | null
@@ -127,6 +128,7 @@ export type Database = {
         }
         Insert: {
           auction_end_time?: string | null
+          base_currency?: string | null
           bid_history?: Json | null
           buyer_email?: string | null
           created_at?: string | null
@@ -148,6 +150,7 @@ export type Database = {
         }
         Update: {
           auction_end_time?: string | null
+          base_currency?: string | null
           bid_history?: Json | null
           buyer_email?: string | null
           created_at?: string | null
