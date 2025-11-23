@@ -53,7 +53,7 @@ export const BidModal = ({
       if (bidAmountInDisplayCurrency < minBidInDisplayCurrency) {
         toast({
           title: "Bid Too Low",
-          description: `Your bid must be at least ${convertPrice(minBid)}`,
+          description: `Your bid must be at least ${convertPrice(minBid, "USD")}`,
           variant: "destructive",
         });
         setLoading(false);
@@ -93,7 +93,7 @@ export const BidModal = ({
 
       toast({
         title: "Bid Placed Successfully",
-        description: `Your bid of ${convertPrice(bidAmountInUSD)} has been placed!`,
+        description: `Your bid of ${convertPrice(bidAmountInUSD, "USD")} has been placed!`,
       });
 
       setFormData({ bidAmount: "", bidderName: "", email: "" });
@@ -117,7 +117,7 @@ export const BidModal = ({
         <DialogHeader>
           <DialogTitle>Place Bid on "{artworkTitle}"</DialogTitle>
           <DialogDescription>
-            Current bid: {convertPrice(currentBid)} - Minimum bid: {convertPrice(minBid)}
+            Current bid: {convertPrice(currentBid, "USD")} - Minimum bid: {convertPrice(minBid, "USD")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

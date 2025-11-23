@@ -58,11 +58,11 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">
             <p className="text-xl font-bold">
-              {artwork.price ? convertPrice(Number(artwork.price)) : "N/A"}
+              {artwork.price ? convertPrice(Number(artwork.price), artwork.base_currency || "USD") : "N/A"}
             </p>
-            {artwork.price && currencyCode !== "USD" && (
+            {artwork.price && currencyCode !== (artwork.base_currency || "USD") && (
               <p className="text-xs text-muted-foreground">
-                ${artwork.price.toLocaleString()} USD
+                {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
               </p>
             )}
           </div>
