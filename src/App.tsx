@@ -5,13 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ArtistSettingsProvider } from "@/contexts/ArtistSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import Home from "./pages/Home";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import NotFound from "./pages/NotFound";
+import React, { Suspense, lazy } from 'react'; // <--- Check/Add this!
 
-const queryClient = new QueryClient();
+// ADD THESE LINES:
+
+const Home = lazy(() => import("./pages/Home"));
+const Index = lazy(() => import("./pages/Index"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -20,18 +22,17 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/admin" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CurrencyProvider>
+       <BrowserRouter>
+         <Suspense fallback={<div>Loading...</div>}>
+  <Routes>
+    <Route path="/" element={<Home />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/contact" element={<Contact />} />
+    <Route path="/admin" element={<Index />} />
+    {/* * ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */ }
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+           </Suspense>
     </ArtistSettingsProvider>
   </QueryClientProvider>
 );
