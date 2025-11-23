@@ -75,7 +75,7 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
               </p>
             )}
           </div>
-          <Badge className={statusColors[artwork.status]}>{artwork.status}</Badge>
+          <Badge className={`${statusColors[artwork.status]} px-3 py-1 text-sm font-medium`}>{artwork.status}</Badge>
         </div>
       </CardContent>
     </Card>

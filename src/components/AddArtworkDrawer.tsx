@@ -43,6 +43,8 @@ export const AddArtworkDrawer = ({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
+  const [distinctLocations, setDistinctLocations] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     image_url: "",
@@ -58,9 +60,10 @@ export const AddArtworkDrawer = ({
     provenance_log: "",
   });
 
-  // Fetch default unit from artist settings
+  // Fetch default unit and autocomplete data
   useEffect(() => {
     fetchDefaultUnit();
+    fetchAutocompleteData();
   }, [open]);
 
   const fetchDefaultUnit = async () => {
@@ -77,6 +80,25 @@ export const AddArtworkDrawer = ({
       }
     } catch (error) {
       console.error("Error fetching default unit:", error);
+    }
+  };
+
+  const fetchAutocompleteData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("artworks")
+        .select("medium, location");
+
+      if (error) throw error;
+      
+      if (data) {
+        const media = [...new Set(data.map(item => item.medium).filter(Boolean))] as string[];
+        const locations = [...new Set(data.map(item => item.location).filter(Boolean))] as string[];
+        setDistinctMedia(media);
+        setDistinctLocations(locations);
+      }
+    } catch (error) {
+      console.error("Error fetching autocomplete data:", error);
     }
   };
   const [errors, setErrors] = useState({
@@ -334,6 +356,7 @@ export const AddArtworkDrawer = ({
               <Label htmlFor="medium">Medium *</Label>
               <Input
                 id="medium"
+                list="medium-suggestions"
                 placeholder="e.g., Oil on canvas"
                 value={formData.medium}
                 onChange={(e) => {
@@ -342,6 +365,11 @@ export const AddArtworkDrawer = ({
                 }}
                 className={errors.medium ? "border-destructive" : ""}
               />
+              <datalist id="medium-suggestions">
+                {distinctMedia.map((medium) => (
+                  <option key={medium} value={medium} />
+                ))}
+              </datalist>
               {errors.medium && (
                 <p className="text-sm text-destructive">Medium is required</p>
               )}
@@ -498,10 +526,16 @@ export const AddArtworkDrawer = ({
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
+                list="location-suggestions"
                 placeholder="e.g., Studio, Gallery X"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               />
+              <datalist id="location-suggestions">
+                {distinctLocations.map((location) => (
+                  <option key={location} value={location} />
+                ))}
+              </datalist>
             </div>
 
             <div className="space-y-2">

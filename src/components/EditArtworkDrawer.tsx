@@ -61,6 +61,8 @@ export const EditArtworkDrawer = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
+  const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
+  const [distinctLocations, setDistinctLocations] = useState<string[]>([]);
   
   // Function to check if dimensions contain unit keywords
   const checkForUnits = (text: string): boolean => {
@@ -99,7 +101,27 @@ export const EditArtworkDrawer = ({
       provenance_log: artwork.provenance_log || "",
     });
     setGalleryHasChanges(false);
+    fetchAutocompleteData();
   }, [artwork.id]);
+
+  const fetchAutocompleteData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("artworks")
+        .select("medium, location");
+
+      if (error) throw error;
+      
+      if (data) {
+        const media = [...new Set(data.map(item => item.medium).filter(Boolean))] as string[];
+        const locations = [...new Set(data.map(item => item.location).filter(Boolean))] as string[];
+        setDistinctMedia(media);
+        setDistinctLocations(locations);
+      }
+    } catch (error) {
+      console.error("Error fetching autocomplete data:", error);
+    }
+  };
 
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -375,10 +397,16 @@ export const EditArtworkDrawer = ({
                 <Label htmlFor="edit-medium">Medium</Label>
                 <Input
                   id="edit-medium"
+                  list="edit-medium-suggestions"
                   placeholder="e.g., Oil on canvas"
                   value={formData.medium}
                   onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
                 />
+                <datalist id="edit-medium-suggestions">
+                  {distinctMedia.map((medium) => (
+                    <option key={medium} value={medium} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="space-y-2">
@@ -531,10 +559,16 @@ export const EditArtworkDrawer = ({
                 <Label htmlFor="edit-location">Location</Label>
                 <Input
                   id="edit-location"
+                  list="edit-location-suggestions"
                   placeholder="e.g., Studio, Gallery X"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 />
+                <datalist id="edit-location-suggestions">
+                  {distinctLocations.map((location) => (
+                    <option key={location} value={location} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="space-y-2">
