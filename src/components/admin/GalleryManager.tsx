@@ -159,6 +159,10 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   };
 
   const handleDeleteImage = async (imageId: string, imageUrl: string) => {
+    // Confirmation dialog
+    const confirmed = window.confirm("Are you sure you want to remove this image?");
+    if (!confirmed) return;
+
     try {
       // Extract file path from URL
       const urlParts = imageUrl.split('/');
@@ -183,9 +187,6 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         title: "Success",
         description: "Image removed",
       });
-
-      // Close lightbox if open
-      setLightboxImage(null);
       
       fetchGalleryImages();
     } catch (error: any) {
@@ -263,6 +264,19 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                   className="w-full h-auto max-h-[300px] object-contain"
                 />
               </div>
+              
+              {/* Delete button - top right corner */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteImage(image.id, image.image_url);
+                }}
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 hover:bg-red-600 hover:text-white text-red-600 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center z-10 shadow-md"
+                aria-label="Delete image"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
           ))}
         </div>
@@ -288,20 +302,6 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
-              </button>
-              
-              {/* Delete Button - Top Left */}
-              <button
-                onClick={() => {
-                  const currentImage = galleryImages[lightboxIndex];
-                  if (currentImage) {
-                    handleDeleteImage(currentImage.id, currentImage.image_url);
-                  }
-                }}
-                className="absolute top-4 left-4 h-10 w-10 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition-colors z-20"
-                aria-label="Delete image"
-              >
-                <Trash2 className="h-5 w-5" />
               </button>
               
               {/* Previous Button */}
