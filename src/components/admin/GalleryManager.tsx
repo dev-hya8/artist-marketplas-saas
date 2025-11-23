@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload } from "lucide-react";
+import { Trash2, Upload, Eye } from "lucide-react";
 
 interface GalleryManagerProps {
   artworkId: string | null;
@@ -21,6 +22,7 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
   const [uploading, setUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (artworkId) {
@@ -208,21 +210,31 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
         <div className="grid grid-cols-2 gap-4">
           {galleryImages.map((image) => (
             <div key={image.id} className="relative group">
-              <div className="w-full h-32 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+              <div 
+                className="w-full h-32 rounded-md border overflow-hidden cursor-pointer"
+                onClick={() => setLightboxImage(image.image_url)}
+              >
                 <img
                   src={image.image_url}
                   alt="Gallery"
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
+                {/* Hover overlay with Eye icon */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Eye className="h-6 w-6 text-white" />
+                </div>
               </div>
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => handleDeleteImage(image.id, image.image_url)}
+                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteImage(image.id, image.image_url);
+                }}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           ))}
@@ -230,6 +242,21 @@ export const GalleryManager = ({ artworkId }: GalleryManagerProps) => {
       ) : (
         <p className="text-sm text-muted-foreground">No additional images yet</p>
       )}
+
+      {/* Lightbox Modal */}
+      <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
+          {lightboxImage && (
+            <div className="relative w-full bg-black">
+              <img
+                src={lightboxImage}
+                alt="Full size preview"
+                className="w-full h-auto max-h-[90vh] object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
