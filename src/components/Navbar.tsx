@@ -45,7 +45,10 @@ export const Navbar = () => {
                 {CURRENCIES.map((currency) => (
                   <DropdownMenuItem
                     key={currency.code}
-                    onClick={() => setCurrency(currency.code)}
+                    onClick={() => {
+                      console.log(`Currency changed to: ${currency.code}`);
+                      setCurrency(currency.code);
+                    }}
                     className={currencyCode === currency.code ? "bg-accent" : ""}
                   >
                     {currency.code} ({currency.symbol}) - {currency.name}

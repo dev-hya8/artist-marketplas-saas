@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -21,6 +22,11 @@ const statusColors = {
 export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
+  
+  // Debug: Log when currency changes
+  useEffect(() => {
+    console.log(`ArtworkCard received new currency: ${currencyCode}`);
+  }, [currencyCode]);
   
   const formatDimensions = () => {
     if (!artwork.dimensions) return null;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 
 interface CurrencyContextType {
   currencyCode: string;
@@ -51,6 +51,8 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch exchange rates when currency changes
   useEffect(() => {
+    console.log(`CurrencyContext: Currency changed to ${currencyCode}`);
+    
     if (currencyCode === "USD") {
       setExchangeRate(1);
       setIsRateFailed(false);
@@ -76,10 +78,12 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
         if (data.result === "success" && data.conversion_rates && data.conversion_rates[currencyCode]) {
           setExchangeRate(data.conversion_rates[currencyCode]);
           setIsRateFailed(false);
+          console.log(`CurrencyContext: Exchange rate for ${currencyCode} is ${data.conversion_rates[currencyCode]}`);
         } else {
           throw new Error("Rate not found in response");
         }
       } catch (error) {
+        console.log(`CurrencyContext: API failed, using fallback rate for ${currencyCode}`);
         setExchangeRate(FALLBACK_RATES[currencyCode] || 1);
         setIsRateFailed(true);
       }
@@ -89,11 +93,12 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   }, [currencyCode]);
 
   const setCurrency = (currency: string) => {
+    console.log(`CurrencyContext: Setting currency to ${currency}`);
     setCurrencyCode(currency);
     localStorage.setItem("selectedCurrency", currency);
   };
 
-  const convertPrice = (price: number, fromCurrency: string = "USD"): string => {
+  const convertPrice = useCallback((price: number, fromCurrency: string = "USD"): string => {
     const fromCurrencyInfo = CURRENCIES.find(c => c.code === fromCurrency);
     const fromSymbol = fromCurrencyInfo?.symbol || "$";
     
@@ -126,7 +131,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
 
     const converted = Math.round(priceInUSD * exchangeRate);
     return `${toSymbol}${converted.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-  };
+  }, [currencyCode, exchangeRate, isRateFailed]);
 
   const currencySymbol = CURRENCIES.find(c => c.code === currencyCode)?.symbol || "$";
 
