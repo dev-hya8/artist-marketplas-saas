@@ -9,11 +9,12 @@ import { InquiryModal } from "@/components/public/InquiryModal";
 import { BidModal } from "@/components/public/BidModal";
 import { AuctionTimer } from "@/components/public/AuctionTimer";
 import { ArtworkCarousel } from "@/components/public/ArtworkCarousel";
+import { PublicArtworkDrawer } from "@/components/public/PublicArtworkDrawer";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Eye } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Artwork = Database["public"]["Tables"]["artworks"]["Row"];
@@ -24,6 +25,7 @@ export default function Home() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [bidModalOpen, setBidModalOpen] = useState(false);
+  const [artworkDrawerOpen, setArtworkDrawerOpen] = useState(false);
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
   const { addToCart, isInCart } = useCart();
@@ -70,6 +72,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewDetails = (artwork: Artwork) => {
+    setSelectedArtwork(artwork);
+    setArtworkDrawerOpen(true);
   };
 
   const handleInquire = (artwork: Artwork) => {
@@ -131,10 +138,12 @@ export default function Home() {
               {fixedPriceArtworks.map((artwork) => (
                 <Card 
                   key={artwork.id} 
-                  className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => artwork.status === "Available" && handleInquire(artwork)}
+                  className="overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                  <div className="aspect-square relative bg-muted">
+                  <div 
+                    className="aspect-square relative bg-muted cursor-pointer"
+                    onClick={() => handleViewDetails(artwork)}
+                  >
                     <ArtworkCarousel 
                       artworkId={artwork.id}
                       mainImageUrl={artwork.image_url}
@@ -173,16 +182,29 @@ export default function Home() {
                             )}
                           </div>
                           
-                          <Button
-                            variant={isInCart(artwork.id) ? "secondary" : "default"}
-                            size="sm"
-                            className="w-full mt-2"
-                            onClick={(e) => handleAddToCart(artwork, e)}
-                            disabled={isInCart(artwork.id)}
-                          >
-                            <ShoppingBag className="h-4 w-4 mr-2" />
-                            {isInCart(artwork.id) ? "In Cart" : "Add to Cart"}
-                          </Button>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-none w-12"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewDetails(artwork);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant={isInCart(artwork.id) ? "secondary" : "default"}
+                              size="sm"
+                              className="flex-1"
+                              onClick={(e) => handleAddToCart(artwork, e)}
+                              disabled={isInCart(artwork.id)}
+                            >
+                              <ShoppingBag className="h-4 w-4 mr-2" />
+                              {isInCart(artwork.id) ? "In Cart" : "Add to Cart"}
+                            </Button>
+                          </div>
                         </>
                       )}
                     </div>
@@ -211,7 +233,10 @@ export default function Home() {
                     key={artwork.id} 
                     className="overflow-hidden hover:shadow-lg transition-shadow"
                   >
-                    <div className="aspect-square relative bg-muted">
+                    <div 
+                      className="aspect-square relative bg-muted cursor-pointer"
+                      onClick={() => handleViewDetails(artwork)}
+                    >
                       <ArtworkCarousel 
                         artworkId={artwork.id}
                         mainImageUrl={artwork.image_url}
@@ -278,23 +303,39 @@ export default function Home() {
                                 variant="default" 
                                 size="sm"
                                 className="w-full"
-                                onClick={() => handleBid(artwork)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBid(artwork);
+                                }}
                               >
                                 Place Bid
                               </Button>
-                              <Button
-                                variant={isInCart(artwork.id) ? "secondary" : "outline"}
-                                size="sm"
-                                className="w-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAddToCart(artwork, e);
-                                }}
-                                disabled={isInCart(artwork.id)}
-                              >
-                                <ShoppingBag className="h-4 w-4 mr-2" />
-                                {isInCart(artwork.id) ? "In Cart" : "Add to Cart"}
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-none w-12"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewDetails(artwork);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant={isInCart(artwork.id) ? "secondary" : "outline"}
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddToCart(artwork, e);
+                                  }}
+                                  disabled={isInCart(artwork.id)}
+                                >
+                                  <ShoppingBag className="h-4 w-4 mr-2" />
+                                  {isInCart(artwork.id) ? "In Cart" : "Add to Cart"}
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -313,6 +354,12 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      <PublicArtworkDrawer
+        artwork={selectedArtwork}
+        open={artworkDrawerOpen}
+        onOpenChange={setArtworkDrawerOpen}
+      />
 
       {selectedArtwork && (
         <>
