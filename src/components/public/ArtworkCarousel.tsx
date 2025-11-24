@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ArtworkCarouselProps {
@@ -48,12 +49,13 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
   // If only one image (main image), show it without carousel
   if (allImages.length <= 1) {
     return (
-      <div className="w-full h-full flex items-center justify-center p-4">
+      <div className="w-full h-full flex items-center justify-center">
         {mainImageUrl ? (
-          <img
+          <OptimizedImage
             src={mainImageUrl}
             alt={artworkTitle}
-            className="w-full h-full object-contain"
+            className="w-full h-full"
+            thumbnailWidth={400}
           />
         ) : (
           <div className="flex items-center justify-center">
@@ -70,11 +72,12 @@ export const ArtworkCarousel = ({ artworkId, mainImageUrl, artworkTitle }: Artwo
       <Carousel className="w-full h-full">
         <CarouselContent className="h-full">
           {allImages.map((image, index) => (
-            <CarouselItem key={image.id} className="flex items-center justify-center h-full p-4">
-              <img
+            <CarouselItem key={image.id} className="flex items-center justify-center h-full">
+              <OptimizedImage
                 src={image.image_url}
                 alt={`${artworkTitle} - View ${index + 1}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full"
+                thumbnailWidth={800}
               />
             </CarouselItem>
           ))}

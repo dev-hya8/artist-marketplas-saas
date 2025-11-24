@@ -13,6 +13,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCart } from "@/contexts/CartContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import type { Database } from "@/integrations/supabase/types";
 
 type Artwork = Database["public"]["Tables"]["artworks"]["Row"];
@@ -86,17 +87,13 @@ export const PublicArtworkDrawer = ({ artwork, open, onOpenChange }: PublicArtwo
         <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
           {/* Large Image */}
           <div className="relative w-full aspect-[4/3] bg-muted">
-            {artwork.image_url ? (
-              <img
-                src={artwork.image_url}
-                alt={artwork.title}
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                No image available
-              </div>
-            )}
+            <OptimizedImage
+              src={artwork.image_url}
+              alt={artwork.title}
+              className="w-full h-full"
+              thumbnailWidth={1200}
+              priority={true}
+            />
             {!isAvailable && (
               <Badge className="absolute top-4 left-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 px-4 py-2 text-sm font-medium uppercase tracking-widest">
                 {artwork.status}
