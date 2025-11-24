@@ -1,3 +1,4 @@
+
 const SUPABASE_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const BUCKET_NAME = 'artwork_images';
 
@@ -15,12 +16,13 @@ export const getSafeImageUrl = (url: string | null | undefined): string | undefi
     return undefined; 
   }
   
-  // Construct the full optimized URL
+  // Construct the full URL using the storage path and optimization parameters
   // Format: [Base URL]/storage/v1/object/public/artwork_images/[filename]?width=400&format=webp&quality=80
   const baseImagePath = `${SUPABASE_BASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${url}`;
   
-  // Add optimization parameters for performance
+  // Optimization parameters for gallery thumbnails (400px width, WebP format)
   const optimizationParams = `?width=400&format=webp&quality=80`;
 
   return `${baseImagePath}${optimizationParams}`;
 };
+```
