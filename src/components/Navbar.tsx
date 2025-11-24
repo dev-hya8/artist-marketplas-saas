@@ -77,10 +77,8 @@ export const Navbar = () => {
               </Link>
             </div>
             
-            {/* Far Right: Theme Toggle + Currency + Cart */}
+            {/* Far Right: Currency + Theme Toggle + Cart */}
             <div className="flex items-center gap-2">
-              <ThemeToggle />
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1 text-sm font-light">
@@ -103,6 +101,8 @@ export const Navbar = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <ThemeToggle />
 
               <Button 
                 variant="ghost" 
