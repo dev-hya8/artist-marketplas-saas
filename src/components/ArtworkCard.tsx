@@ -28,6 +28,8 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
   
   // Debug: Log the artwork image URL
   console.log('Artwork URL being rendered:', artwork.image_url);
+  console.log('🔍 FULL ARTWORK DATA:', artwork);
+  console.log('🔧 Safe URL Result:', getSafeImageUrl(artwork.image_url));
   
   // Debug: Log currency context on every render
   console.log(`🔄 ArtworkCard [${artwork.title}] - Currency Context is NOW: ${currencyCode}, Rate Failed: ${isRateFailed}`);
