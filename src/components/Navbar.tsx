@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { useCart } from "@/contexts/CartContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,16 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CartDrawer } from "@/components/CartDrawer";
 
 export const Navbar = () => {
   const { settings, loading } = useArtistSettings();
   const { currencyCode, currencySymbol, setCurrency } = useCurrency();
+  const { itemCount } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   
   const isHomePage = location.pathname === "/";
   const viewMode = searchParams.get("view") || "buy-now";
-  const cartItemCount = 0; // TODO: Connect to cart state
 
   const setViewMode = (mode: string) => {
     setSearchParams({ view: mode });
@@ -97,14 +101,19 @@ export const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" size="icon" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={() => setCartDrawerOpen(true)}
+              >
                 <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
+                {itemCount > 0 && (
                   <Badge 
                     variant="destructive" 
                     className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                   >
-                    {cartItemCount}
+                    {itemCount}
                   </Badge>
                 )}
               </Button>
@@ -112,6 +121,8 @@ export const Navbar = () => {
           </div>
         </div>
       </div>
+
+      <CartDrawer open={cartDrawerOpen} onOpenChange={setCartDrawerOpen} />
     </nav>
   );
 };
