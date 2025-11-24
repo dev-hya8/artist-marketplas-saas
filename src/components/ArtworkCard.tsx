@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { Image } from "lucide-react";
-import { getSafeImageUrl } from "@/lib/imageUtils";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -25,19 +25,7 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
   const [imageError, setImageError] = useState(false);
-  
-  // Debug: Log the artwork image URL
-  console.log('Artwork URL being rendered:', artwork.image_url);
-  console.log('🔍 FULL ARTWORK DATA:', artwork);
-  console.log('🔧 Safe URL Result:', getSafeImageUrl(artwork.image_url));
-  
-  // Debug: Log currency context on every render
-  console.log(`🔄 ArtworkCard [${artwork.title}] - Currency Context is NOW: ${currencyCode}, Rate Failed: ${isRateFailed}`);
-  
-  // Debug: Log when currency changes
-  useEffect(() => {
-    console.log(`✅ ArtworkCard [${artwork.title}] - Currency CHANGED to: ${currencyCode}`);
-  }, [currencyCode]);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   const formatDimensions = () => {
     if (!artwork.dimensions) return null;
@@ -50,12 +38,26 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={onClick}
     >
-      <div className="aspect-square relative bg-muted">
+      <div className="aspect-square relative bg-muted overflow-hidden">
+        {/* Skeleton Shimmer Loader */}
+        {artwork.image_url && !imageError && !imageLoaded && (
+          <div 
+            className="absolute inset-0 w-full h-full bg-gradient-to-r from-muted via-muted-foreground/10 to-muted animate-shimmer"
+            style={{
+              backgroundSize: "1000px 100%",
+            }}
+          />
+        )}
+        
         {artwork.image_url && !imageError ? (
           <img
-            src={getSafeImageUrl(artwork.image_url) || ''}
+            src={getOptimizedImageUrl(artwork.image_url)}
             alt={artwork.title}
-            className="w-full h-full object-cover"
+            loading="lazy"
+            className={`w-full h-full object-cover transition-opacity duration-300 ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => setImageLoaded(true)}
             onError={() => {
               console.error('Image failed to load:', artwork.image_url);
               setImageError(true);
