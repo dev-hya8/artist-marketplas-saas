@@ -11,6 +11,9 @@ import { AuctionTimer } from "@/components/public/AuctionTimer";
 import { ArtworkCarousel } from "@/components/public/ArtworkCarousel";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
+import { ShoppingBag } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Artwork = Database["public"]["Tables"]["artworks"]["Row"];
@@ -23,6 +26,8 @@ export default function Home() {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
+  const { addToCart, isInCart } = useCart();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   
   const viewMode = searchParams.get("view") || "buy-now";
@@ -76,6 +81,23 @@ export default function Home() {
   const handleBid = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setBidModalOpen(true);
+  };
+
+  const handleAddToCart = (artwork: Artwork, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInCart(artwork.id)) {
+      toast({
+        title: "Already in cart",
+        description: `"${artwork.title}" is already in your collection.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    addToCart(artwork);
+    toast({
+      title: "Added to cart",
+      description: `"${artwork.title}" has been added to your collection.`,
+    });
   };
 
   const fixedPriceArtworks = artworks.filter((a) => a.sale_type === "fixed");
@@ -139,16 +161,29 @@ export default function Home() {
                       )}
 
                       {artwork.status === "Available" && artwork.price && (
-                        <div className="pt-2 space-y-0.5">
-                          <p className="text-base md:text-xl font-bold">
-                            {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
-                          </p>
-                          {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
-                            <p className="text-xs text-muted-foreground">
-                              Listed as {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
+                        <>
+                          <div className="pt-2 space-y-0.5">
+                            <p className="text-base md:text-xl font-bold">
+                              {convertPrice(Number(artwork.price), artwork.base_currency || "USD")}
                             </p>
-                          )}
-                        </div>
+                            {!isRateFailed && currencyCode !== (artwork.base_currency || "USD") && (
+                              <p className="text-xs text-muted-foreground">
+                                Listed as {artwork.base_currency || "USD"} {artwork.price.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <Button
+                            variant={isInCart(artwork.id) ? "secondary" : "default"}
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={(e) => handleAddToCart(artwork, e)}
+                            disabled={isInCart(artwork.id)}
+                          >
+                            <ShoppingBag className="h-4 w-4 mr-2" />
+                            {isInCart(artwork.id) ? "In Cart" : "Add to Cart"}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </CardContent>
@@ -227,9 +262,9 @@ export default function Home() {
                           )}
 
                           {ended ? (
-                            <div>
+                            <div className="space-y-2">
                               {artwork.winner_name && (
-                                <p className="text-xs text-muted-foreground mb-2">
+                                <p className="text-xs text-muted-foreground">
                                   Winner: {artwork.winner_name}
                                 </p>
                               )}
@@ -238,14 +273,29 @@ export default function Home() {
                               </Button>
                             </div>
                           ) : (
-                            <Button 
-                              variant="default" 
-                              size="sm"
-                              className="w-full"
-                              onClick={() => handleBid(artwork)}
-                            >
-                              Place Bid
-                            </Button>
+                            <div className="space-y-2">
+                              <Button 
+                                variant="default" 
+                                size="sm"
+                                className="w-full"
+                                onClick={() => handleBid(artwork)}
+                              >
+                                Place Bid
+                              </Button>
+                              <Button
+                                variant={isInCart(artwork.id) ? "secondary" : "outline"}
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToCart(artwork, e);
+                                }}
+                                disabled={isInCart(artwork.id)}
+                              >
+                                <ShoppingBag className="h-4 w-4 mr-2" />
+                                {isInCart(artwork.id) ? "In Cart" : "Add to Cart"}
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
