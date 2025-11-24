@@ -1,4 +1,4 @@
-const SUPABASE_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_BASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET_NAME = 'artwork_images';
 
 export const getSafeImageUrl = (url: string | null | undefined): string | undefined => {
