@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { Image } from "lucide-react";
+import { getSafeImageUrl } from "@/lib/imageUtils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -50,7 +51,7 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
       <div className="aspect-square relative bg-muted">
         {artwork.image_url && !imageError ? (
           <img
-            src={artwork.image_url}
+            src={getSafeImageUrl(artwork.image_url) || ''}
             alt={artwork.title}
             className="w-full h-full object-cover"
             onError={() => {
