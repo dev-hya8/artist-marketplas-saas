@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       artist_settings: {
         Row: {
+          artist_bio: string | null
+          artist_statement: string | null
           avatar_url: string | null
           bio_image_url: string | null
           bio_text: string | null
@@ -26,6 +28,7 @@ export type Database = {
           cv_education: string | null
           cv_exhibitions: string | null
           display_name: string
+          elevator_pitch: string | null
           email_alerts_enabled: boolean | null
           facebook_handle: string | null
           id: string
@@ -40,6 +43,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          artist_bio?: string | null
+          artist_statement?: string | null
           avatar_url?: string | null
           bio_image_url?: string | null
           bio_text?: string | null
@@ -50,6 +55,7 @@ export type Database = {
           cv_education?: string | null
           cv_exhibitions?: string | null
           display_name?: string
+          elevator_pitch?: string | null
           email_alerts_enabled?: boolean | null
           facebook_handle?: string | null
           id?: string
@@ -64,6 +70,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          artist_bio?: string | null
+          artist_statement?: string | null
           avatar_url?: string | null
           bio_image_url?: string | null
           bio_text?: string | null
@@ -74,6 +82,7 @@ export type Database = {
           cv_education?: string | null
           cv_exhibitions?: string | null
           display_name?: string
+          elevator_pitch?: string | null
           email_alerts_enabled?: boolean | null
           facebook_handle?: string | null
           id?: string
@@ -285,6 +294,33 @@ export type Database = {
           twitter?: string | null
           updated_at?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      studio_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_featured: boolean | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_featured?: boolean | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_featured?: boolean | null
         }
         Relationships: []
       }
