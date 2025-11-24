@@ -5,7 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+
+const INQUIRY_TYPES = [
+  "Commission",
+  "Purchase Inquiry",
+  "Collaboration",
+  "Other",
+] as const;
 
 interface InquiryModalProps {
   open: boolean;
@@ -20,6 +34,7 @@ export const InquiryModal = ({ open, onOpenChange, artworkId, artworkTitle }: In
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    inquiryType: "Purchase Inquiry" as typeof INQUIRY_TYPES[number],
     message: "",
   });
 
@@ -32,6 +47,7 @@ export const InquiryModal = ({ open, onOpenChange, artworkId, artworkTitle }: In
         artwork_id: artworkId,
         name: formData.name,
         email: formData.email,
+        inquiry_type: formData.inquiryType,
         message: formData.message,
       });
 
@@ -42,7 +58,7 @@ export const InquiryModal = ({ open, onOpenChange, artworkId, artworkTitle }: In
         description: "Hya will contact you soon.",
       });
 
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", email: "", inquiryType: "Purchase Inquiry", message: "" });
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error submitting inquiry:", error);
@@ -85,6 +101,27 @@ export const InquiryModal = ({ open, onOpenChange, artworkId, artworkTitle }: In
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="inquiryType">Inquiry Type *</Label>
+            <Select
+              value={formData.inquiryType}
+              onValueChange={(value) =>
+                setFormData({ ...formData, inquiryType: value as typeof INQUIRY_TYPES[number] })
+              }
+            >
+              <SelectTrigger id="inquiryType">
+                <SelectValue placeholder="Select inquiry type" />
+              </SelectTrigger>
+              <SelectContent>
+                {INQUIRY_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
