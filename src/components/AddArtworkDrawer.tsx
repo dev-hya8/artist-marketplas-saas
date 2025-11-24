@@ -24,7 +24,6 @@ import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { Trash2, Crop } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
-import { compressImage } from "@/lib/imageUtils";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -154,48 +153,36 @@ export const AddArtworkDrawer = ({
     const previewUrl = URL.createObjectURL(croppedBlob);
     setImagePreview(previewUrl);
 
-    // Convert Blob to File for compression and upload
-    const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.jpg`, {
-      type: 'image/jpeg',
-    });
-
-    // Upload the cropped image
+    // Upload the cropped image directly without compression
     setUploading(true);
     try {
-      // Compress the image before upload (max 2MB)
-      console.log("🗜️ Compressing image before upload...");
-      const compressedFile = await compressImage(croppedFile, 2);
-      
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
       const filePath = fileName;
 
-      console.log("📤 Uploading compressed file:", fileName);
+      console.log("📤 Uploading file:", fileName);
 
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
-        .upload(filePath, compressedFile);
+        .upload(filePath, croppedBlob);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('artwork_images')
         .getPublicUrl(filePath);
-
-      // Add timestamp to prevent caching
-      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
       
-      console.log("Setting image URL:", urlWithTimestamp);
+      console.log("Setting image URL:", publicUrl);
       setFormData({ ...formData, image_url: publicUrl });
 
       toast({
         title: "Success",
-        description: "Cropped image uploaded successfully",
+        description: "Image uploaded successfully",
       });
     } catch (error: any) {
       console.error("Image upload error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to upload cropped image",
+        description: error.message || "Failed to upload image",
         variant: "destructive",
       });
       setImagePreview(null);

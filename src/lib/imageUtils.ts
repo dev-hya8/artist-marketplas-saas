@@ -1,4 +1,3 @@
-
 const SUPABASE_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const BUCKET_NAME = 'artwork_images';
 
@@ -25,4 +24,15 @@ export const getSafeImageUrl = (url: string | null | undefined): string | undefi
 
   return `${baseImagePath}${optimizationParams}`;
 };
-```
+
+export const getOptimizedImageUrl = (url: string | null, width: number = 400): string | undefined => {
+  const safeUrl = getSafeImageUrl(url);
+  if (!safeUrl) return undefined;
+  
+  // If URL already has params, don't add more
+  if (safeUrl.includes('?')) {
+    return safeUrl;
+  }
+  
+  return `${safeUrl}?width=${width}&format=webp&quality=80`;
+};
