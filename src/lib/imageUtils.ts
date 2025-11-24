@@ -1,8 +1,26 @@
 import imageCompression from 'browser-image-compression';
 
 /**
+ * Ensures the image URL is complete and valid
+ * @param fileNameOrUrl - Either a complete URL or just a filename
+ * @returns Complete Supabase storage URL
+ */
+export const getSafeImageUrl = (fileNameOrUrl: string | null): string | null => {
+  if (!fileNameOrUrl) return null;
+
+  // If it's already a complete URL, return it
+  if (fileNameOrUrl.startsWith('http://') || fileNameOrUrl.startsWith('https://')) {
+    return fileNameOrUrl;
+  }
+
+  // Otherwise, prepend the Supabase storage URL
+  const supabaseUrl = 'https://dyevqulywrpkpffatxcr.supabase.co';
+  return `${supabaseUrl}/storage/v1/object/public/artwork_images/${fileNameOrUrl}`;
+};
+
+/**
  * Converts a Supabase storage URL to use image transformations
- * @param url Original storage URL
+ * @param url Original storage URL or filename
  * @param width Target width (default: 400)
  * @param format Target format (default: webp)
  * @returns Transformed image URL
@@ -14,15 +32,19 @@ export const getOptimizedImageUrl = (
 ): string | null => {
   if (!url) return null;
   
+  // First ensure the URL is complete
+  const safeUrl = getSafeImageUrl(url);
+  if (!safeUrl) return null;
+  
   // Check if it's a Supabase storage URL
   const supabaseStoragePattern = /supabase\.co\/storage\/v1\/object\/public\//;
   
-  if (!supabaseStoragePattern.test(url)) {
-    return url; // Return original URL if not Supabase storage
+  if (!supabaseStoragePattern.test(safeUrl)) {
+    return safeUrl; // Return original URL if not Supabase storage
   }
   
   // Convert to render endpoint with transformations
-  const transformedUrl = url.replace(
+  const transformedUrl = safeUrl.replace(
     '/storage/v1/object/public/',
     `/storage/v1/render/image/public/`
   );
