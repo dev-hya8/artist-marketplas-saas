@@ -1,25 +1,26 @@
-// src/lib/imageUtils.ts (REPLACE EVERYTHING IN THIS FILE)
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const BUCKET_NAME = 'artwork_images';
 
-// Function to safely construct a full image URL
 export const getSafeImageUrl = (url: string | null | undefined): string | undefined => {
-  // 1. If the input URL is null or undefined, return nothing
   if (!url) return undefined;
-
-  // 2. If the URL already starts with http, it's complete, so use it
+  
+  // If the URL already contains a domain, return it directly
   if (url.startsWith('http')) {
     return url;
   }
 
-  // 3. If the Supabase URL is missing from environment, throw an error for debug
-  if (!SUPABASE_URL) {
-    console.error("Environment variable NEXT_PUBLIC_SUPABASE_URL is missing!");
+  // Check if the Base URL is missing
+  if (!SUPABASE_BASE_URL) {
+    console.error("SUPABASE_BASE_URL environment variable is missing!");
     return undefined; 
   }
   
-  // 4. If we only have the filename, construct the full path
-  // Format: [Supabase URL]/storage/v1/object/public/[BUCKET_NAME]/[filename]
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${url}`;
+  // Construct the full optimized URL
+  // Format: [Base URL]/storage/v1/object/public/artwork_images/[filename]?width=400&format=webp&quality=80
+  const baseImagePath = `${SUPABASE_BASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${url}`;
+  
+  // Add optimization parameters for performance
+  const optimizationParams = `?width=400&format=webp&quality=80`;
+
+  return `${baseImagePath}${optimizationParams}`;
 };
