@@ -24,6 +24,7 @@ import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { Trash2, Crop } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
+import { compressImage } from "@/lib/imageUtils";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -153,7 +154,7 @@ export const AddArtworkDrawer = ({
     const previewUrl = URL.createObjectURL(croppedBlob);
     setImagePreview(previewUrl);
 
-    // Convert Blob to File for upload
+    // Convert Blob to File for compression and upload
     const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.jpg`, {
       type: 'image/jpeg',
     });
@@ -161,14 +162,18 @@ export const AddArtworkDrawer = ({
     // Upload the cropped image
     setUploading(true);
     try {
+      // Compress the image before upload (max 2MB)
+      console.log("🗜️ Compressing image before upload...");
+      const compressedFile = await compressImage(croppedFile, 2);
+      
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
       const filePath = fileName;
 
-      console.log("Uploading cropped file:", fileName);
+      console.log("📤 Uploading compressed file:", fileName);
 
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
-        .upload(filePath, croppedFile);
+        .upload(filePath, compressedFile);
 
       if (uploadError) throw uploadError;
 

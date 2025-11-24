@@ -10,6 +10,7 @@ import { BidModal } from "@/components/public/BidModal";
 import { AuctionTimer } from "@/components/public/AuctionTimer";
 import { ArtworkCarousel } from "@/components/public/ArtworkCarousel";
 import { PublicArtworkDrawer } from "@/components/public/PublicArtworkDrawer";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { useCart } from "@/contexts/CartContext";

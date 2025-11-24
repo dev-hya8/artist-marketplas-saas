@@ -35,6 +35,7 @@ import { Trash2, Upload, Crop, X } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { compressImage } from "@/lib/imageUtils";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -160,19 +161,23 @@ export const EditArtworkDrawer = ({
     setUploading(true);
 
     try {
-      // Convert Blob to File for upload
+      // Convert Blob to File for compression and upload
       const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.jpg`, {
         type: 'image/jpeg',
       });
 
+      // Compress the image before upload (max 2MB)
+      console.log("🗜️ Compressing image before upload...");
+      const compressedFile = await compressImage(croppedFile, 2);
+
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
       const filePath = fileName;
 
-      console.log("Uploading cropped file:", fileName);
+      console.log("📤 Uploading compressed file:", fileName);
 
       const { error: uploadError } = await supabase.storage
         .from('artwork_images')
-        .upload(filePath, croppedFile);
+        .upload(filePath, compressedFile);
 
       if (uploadError) throw uploadError;
 
@@ -198,8 +203,11 @@ export const EditArtworkDrawer = ({
         }
       }
 
-      console.log("Setting image URL:", publicUrl);
-      setFormData({ ...formData, image_url: publicUrl });
+      // Add timestamp to prevent caching
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+      
+      console.log("Setting image URL:", urlWithTimestamp);
+      setFormData({ ...formData, image_url: urlWithTimestamp });
       
       toast({
         title: "Success",
