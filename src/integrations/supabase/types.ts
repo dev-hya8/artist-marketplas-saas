@@ -285,21 +285,6 @@ export type Database = {
         }
         Relationships: []
       }
-      Profiles: {
-        Row: {
-          created_at: string
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          id?: number
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string | null
