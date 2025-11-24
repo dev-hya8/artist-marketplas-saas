@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InquiryModal } from "@/components/public/InquiryModal";
 import { BidModal } from "@/components/public/BidModal";
 import { AuctionTimer } from "@/components/public/AuctionTimer";
@@ -23,6 +23,9 @@ export default function Home() {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
+  const [searchParams] = useSearchParams();
+  
+  const viewMode = searchParams.get("view") || "buy-now";
 
   const formatDimensions = (dimensions: string | null) => {
     if (!dimensions) return null;
@@ -98,14 +101,10 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 pt-24 pb-12">
-        <Tabs defaultValue="buy-now" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="buy-now">Buy Now</TabsTrigger>
-            <TabsTrigger value="auctions">Auctions</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="buy-now">
+      <main className="container mx-auto px-4 pt-20 pb-12">
+        {/* Buy Now View */}
+        {viewMode === "buy-now" && (
+          <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {fixedPriceArtworks.map((artwork) => (
                 <Card 
@@ -162,9 +161,12 @@ export default function Home() {
                 No fixed-price artworks available yet.
               </div>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="auctions">
+        {/* Auctions View */}
+        {viewMode === "auctions" && (
+          <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {auctionArtworks.map((artwork) => {
                 const ended = isAuctionEnded(artwork.auction_end_time);
@@ -258,8 +260,8 @@ export default function Home() {
                 No auctions available yet.
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </main>
 
       {selectedArtwork && (
