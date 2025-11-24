@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
+import { Image } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -22,6 +23,10 @@ const statusColors = {
 export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
   const { settings } = useArtistSettings();
+  const [imageError, setImageError] = useState(false);
+  
+  // Debug: Log the artwork image URL
+  console.log('Artwork URL being rendered:', artwork.image_url);
   
   // Debug: Log currency context on every render
   console.log(`🔄 ArtworkCard [${artwork.title}] - Currency Context is NOW: ${currencyCode}, Rate Failed: ${isRateFailed}`);
@@ -43,15 +48,19 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
       onClick={onClick}
     >
       <div className="aspect-square relative bg-muted">
-        {artwork.image_url ? (
+        {artwork.image_url && !imageError ? (
           <img
             src={artwork.image_url}
             alt={artwork.title}
             className="w-full h-full object-cover"
+            onError={() => {
+              console.error('Image failed to load:', artwork.image_url);
+              setImageError(true);
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            No Image
+            <Image className="h-12 w-12 opacity-40" />
           </div>
         )}
       </div>
