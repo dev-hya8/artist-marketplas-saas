@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { StudioGallery } from "@/components/StudioGallery";
 import { TextSkeleton } from "@/components/TextSkeleton";
+import { ImageWithDarkMode } from "@/components/ImageWithDarkMode";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -24,7 +25,7 @@ export default function About() {
             {loading ? (
               <div className="w-full h-full bg-gradient-to-r from-muted via-muted-foreground/10 to-muted animate-shimmer" />
             ) : settings?.avatar_url ? (
-              <img 
+              <ImageWithDarkMode 
                 src={settings.avatar_url} 
                 alt={settings.display_name}
                 className="w-full h-full object-cover"

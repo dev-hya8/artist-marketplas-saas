@@ -5,6 +5,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { Image } from "lucide-react";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
+import { ImageWithDarkMode } from "@/components/ImageWithDarkMode";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -52,7 +53,7 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
         )}
         
         {optimizedImageUrl && !imageError ? (
-          <img
+          <ImageWithDarkMode
             src={optimizedImageUrl}
             alt={artwork.title}
             loading="lazy"

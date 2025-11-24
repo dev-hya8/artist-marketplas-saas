@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CartDrawer } from "@/components/CartDrawer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Navbar = () => {
   const { settings, loading } = useArtistSettings();
@@ -76,8 +77,10 @@ export const Navbar = () => {
               </Link>
             </div>
             
-            {/* Far Right: Currency + Cart */}
+            {/* Far Right: Theme Toggle + Currency + Cart */}
             <div className="flex items-center gap-2">
+              <ThemeToggle />
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1 text-sm font-light">

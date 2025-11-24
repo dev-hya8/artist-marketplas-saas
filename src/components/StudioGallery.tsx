@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
+import { ImageWithDarkMode } from "@/components/ImageWithDarkMode";
 
 interface StudioPhoto {
   id: string;
@@ -118,7 +119,7 @@ export const StudioGallery = () => {
 
                   {/* Image */}
                   {optimizedUrl && (
-                    <img
+                    <ImageWithDarkMode
                       src={optimizedUrl}
                       alt={photo.caption || "Studio photo"}
                       loading="lazy"
