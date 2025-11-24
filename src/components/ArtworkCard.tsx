@@ -32,6 +32,8 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
     const unit = settings?.measurement_unit || "in";
     return `${artwork.dimensions} ${unit}`;
   };
+
+  const optimizedImageUrl = getOptimizedImageUrl(artwork.image_url);
   
   return (
     <Card
@@ -40,7 +42,7 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
     >
       <div className="aspect-square relative bg-muted overflow-hidden">
         {/* Skeleton Shimmer Loader */}
-        {artwork.image_url && !imageError && !imageLoaded && (
+        {optimizedImageUrl && !imageError && !imageLoaded && (
           <div 
             className="absolute inset-0 w-full h-full bg-gradient-to-r from-muted via-muted-foreground/10 to-muted animate-shimmer"
             style={{
@@ -49,9 +51,9 @@ export const ArtworkCard = ({ artwork, onClick }: ArtworkCardProps) => {
           />
         )}
         
-        {artwork.image_url && !imageError ? (
+        {optimizedImageUrl && !imageError ? (
           <img
-            src={getOptimizedImageUrl(artwork.image_url)}
+            src={optimizedImageUrl}
             alt={artwork.title}
             loading="lazy"
             className={`w-full h-full object-cover transition-opacity duration-300 ${
