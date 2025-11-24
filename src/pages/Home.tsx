@@ -15,7 +15,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useArtistSettings } from "@/contexts/ArtistSettingsContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingBag, Eye } from "lucide-react";
+import { ShoppingBag, Maximize2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Artwork = Database["public"]["Tables"]["artworks"]["Row"];
@@ -193,7 +193,7 @@ export default function Home() {
                                 handleViewDetails(artwork);
                               }}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Maximize2 className="h-4 w-4" />
                             </Button>
                             <Button
                               variant={isInCart(artwork.id) ? "secondary" : "default"}
@@ -321,7 +321,7 @@ export default function Home() {
                                     handleViewDetails(artwork);
                                   }}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Maximize2 className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant={isInCart(artwork.id) ? "secondary" : "outline"}
