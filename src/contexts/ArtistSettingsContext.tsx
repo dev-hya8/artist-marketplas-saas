@@ -20,6 +20,9 @@ interface ArtistSettings {
   cv_exhibitions: string | null;
   cv_education: string | null;
   cv_awards: string | null;
+  artist_bio: string | null;
+  artist_statement: string | null;
+  elevator_pitch: string | null;
 }
 
 interface ArtistSettingsContextType {

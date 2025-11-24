@@ -12,6 +12,7 @@ import { Suspense, lazy } from 'react';
 const Home = lazy(() => import("./pages/Home"));
 const Index = lazy(() => import("./pages/Index"));
 const About = lazy(() => import("./pages/About"));
+const CV = lazy(() => import("./pages/CV"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -31,6 +32,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/cv" element={<CV />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/admin" element={<Index />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
