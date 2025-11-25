@@ -53,6 +53,7 @@ const Index = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
   const [viewMode, setViewMode] = useState<"table" | "gallery">("gallery");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
@@ -90,6 +91,12 @@ const Index = () => {
       if (error) throw error;
       return data as Artwork[];
     },
+  });
+
+  // Filter artworks based on status
+  const filteredArtworks = artworks?.filter(artwork => {
+    if (statusFilter === "all") return true;
+    return artwork.status === statusFilter;
   });
 
   const handleCardClick = (artwork: Artwork) => {
@@ -306,40 +313,48 @@ const Index = () => {
                 <DollarSign className="mr-2 h-5 w-5" />
                 Create Invoice
               </Button>
-
-              {viewMode === "table" && (
-                <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="secondary"
-                      size="lg"
-                      className="h-12 text-base font-semibold px-6"
-                    >
-                      <Download className="mr-2 h-5 w-5" />
-                      Export
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-56 p-0 bg-background" align="start">
-                    <div className="flex flex-col">
-                      <Button 
-                        variant="ghost" 
-                        className="justify-start text-base py-3 px-4 rounded-none"
-                        onClick={() => handleExport('pdf')}
-                      >
-                        Export as PDF
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        className="justify-start text-base py-3 px-4 rounded-none"
-                        onClick={() => handleExport('docx')}
-                      >
-                        Export as DOCX
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              )}
             </div>
+
+            {/* Status Filters - Only show in table view */}
+            {viewMode === "table" && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={statusFilter === "all" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("all")}
+                  size="sm"
+                >
+                  All Works
+                </Button>
+                <Button
+                  variant={statusFilter === "Sold" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("Sold")}
+                  size="sm"
+                >
+                  Sold
+                </Button>
+                <Button
+                  variant={statusFilter === "Available" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("Available")}
+                  size="sm"
+                >
+                  Available
+                </Button>
+                <Button
+                  variant={statusFilter === "Reserved" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("Reserved")}
+                  size="sm"
+                >
+                  Reserved
+                </Button>
+                <Button
+                  variant={statusFilter === "On Loan" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("On Loan")}
+                  size="sm"
+                >
+                  On Loan
+                </Button>
+              </div>
+            )}
 
             {/* Inventory View - Table or Gallery */}
             {isLoading ? (
@@ -348,64 +363,100 @@ const Index = () => {
                 <div className="h-24 bg-muted rounded"></div>
                 <div className="h-24 bg-muted rounded"></div>
               </div>
-            ) : artworks && artworks.length > 0 ? (
+            ) : filteredArtworks && filteredArtworks.length > 0 ? (
               viewMode === "table" ? (
-                <div className="border border-border rounded-lg overflow-hidden bg-background">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50">
-                        <TableHead className="font-bold text-base h-14">Title</TableHead>
-                        <TableHead className="font-bold text-base h-14">Price</TableHead>
-                        <TableHead className="font-bold text-base h-14">Status</TableHead>
-                        <TableHead className="font-bold text-base h-14">Date Listed</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {artworks.map((artwork) => (
-                        <TableRow 
-                          key={artwork.id}
-                          className="cursor-pointer hover:bg-muted/50 transition-colors h-16"
-                          onClick={() => handleCardClick(artwork)}
-                        >
-                          <TableCell className="font-medium text-base">{artwork.title}</TableCell>
-                          <TableCell className="text-base">
-                            {artwork.price 
-                              ? `${CURRENCIES.find(c => c.code === currencyCode)?.symbol}${artwork.price.toLocaleString()}` 
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            {artwork.status === "Available" && (
-                              <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
-                                <span className="mr-1.5">●</span> Available
-                              </Badge>
-                            )}
-                            {artwork.status === "Sold" && (
-                              <Badge variant="destructive">
-                                <span className="mr-1.5">●</span> Sold
-                              </Badge>
-                            )}
-                            {artwork.status === "On Loan" && (
-                              <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                                <span className="mr-1.5">●</span> On Loan {artwork.location && `at ${artwork.location}`}
-                              </Badge>
-                            )}
-                            {artwork.status === "Reserved" && (
-                              <Badge variant="secondary">
-                                <span className="mr-1.5">●</span> Reserved
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-base text-muted-foreground">
-                            {artwork.created_at ? format(new Date(artwork.created_at), "dd MMM yyyy") : "N/A"}
-                          </TableCell>
+                <>
+                  <div className="border border-border rounded-lg overflow-hidden bg-background">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead className="font-bold text-base h-14">Title</TableHead>
+                          <TableHead className="font-bold text-base h-14">Price</TableHead>
+                          <TableHead className="font-bold text-base h-14">Status</TableHead>
+                          <TableHead className="font-bold text-base h-14">Date Listed</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredArtworks.map((artwork) => (
+                          <TableRow 
+                            key={artwork.id}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors h-16"
+                            onClick={() => handleCardClick(artwork)}
+                          >
+                            <TableCell className="font-medium text-base">{artwork.title}</TableCell>
+                            <TableCell className="text-base">
+                              {artwork.price 
+                                ? `${CURRENCIES.find(c => c.code === currencyCode)?.symbol}${artwork.price.toLocaleString()}` 
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              {artwork.status === "Available" && (
+                                <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
+                                  <span className="mr-1.5">●</span> Available
+                                </Badge>
+                              )}
+                              {artwork.status === "Sold" && (
+                                <Badge variant="destructive">
+                                  <span className="mr-1.5">●</span> Sold
+                                </Badge>
+                              )}
+                              {artwork.status === "On Loan" && (
+                                <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                                  <span className="mr-1.5">●</span> On Loan {artwork.location && `at ${artwork.location}`}
+                                </Badge>
+                              )}
+                              {artwork.status === "Reserved" && (
+                                <Badge variant="secondary">
+                                  <span className="mr-1.5">●</span> Reserved
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-base text-muted-foreground">
+                              {artwork.created_at ? format(new Date(artwork.created_at), "dd MMM yyyy") : "N/A"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  {/* Export Button - Below the table */}
+                  <div className="flex justify-end mt-4">
+                    <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="secondary"
+                          size="lg"
+                          className="h-12 text-base font-semibold px-6"
+                        >
+                          <Download className="mr-2 h-5 w-5" />
+                          Export
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-0 bg-background" align="end">
+                        <div className="flex flex-col">
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start text-base py-3 px-4 rounded-none"
+                            onClick={() => handleExport('pdf')}
+                          >
+                            Export as PDF
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="justify-start text-base py-3 px-4 rounded-none"
+                            onClick={() => handleExport('docx')}
+                          >
+                            Export as DOCX
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {artworks.map((artwork) => (
+                  {filteredArtworks.map((artwork) => (
                     <ArtworkCard
                       key={artwork.id}
                       artwork={artwork}
@@ -416,10 +467,16 @@ const Index = () => {
               )
             ) : (
               <div className="text-center py-16 border border-border rounded-lg bg-muted/20">
-                <p className="text-lg text-muted-foreground mb-4">No artworks yet</p>
-                <Button onClick={() => setAddDrawerOpen(true)} size="lg">
-                  Add Your First Artwork
-                </Button>
+                <p className="text-lg text-muted-foreground mb-4">
+                  {viewMode === "table" && statusFilter !== "all" 
+                    ? `No ${statusFilter.toLowerCase()} artworks found` 
+                    : "No artworks yet"}
+                </p>
+                {(!artworks || artworks.length === 0) && (
+                  <Button onClick={() => setAddDrawerOpen(true)} size="lg">
+                    Add Your First Artwork
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>
