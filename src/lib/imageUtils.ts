@@ -29,10 +29,9 @@ export const getOptimizedImageUrl = (url: string | null, width: number = 400): s
   const safeUrl = getSafeImageUrl(url);
   if (!safeUrl) return undefined;
   
-  // If URL already has params, don't add more
-  if (safeUrl.includes('?')) {
-    return safeUrl;
-  }
+  // Remove any existing params to get the base URL
+  const baseUrl = safeUrl.split('?')[0];
   
-  return `${safeUrl}?width=${width}&format=webp&quality=80`;
+  // Add Supabase transformation parameters
+  return `${baseUrl}?width=${width}&format=webp&quality=80`;
 };
