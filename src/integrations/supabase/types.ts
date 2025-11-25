@@ -42,6 +42,7 @@ export type Database = {
           twitter_handle: string | null
           upcoming_events: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           artist_bio?: string | null
@@ -70,6 +71,7 @@ export type Database = {
           twitter_handle?: string | null
           upcoming_events?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           artist_bio?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           twitter_handle?: string | null
           upcoming_events?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -154,6 +157,7 @@ export type Database = {
           status: Database["public"]["Enums"]["artwork_status"]
           title: string
           updated_at: string | null
+          user_id: string | null
           winner_name: string | null
         }
         Insert: {
@@ -179,6 +183,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["artwork_status"]
           title: string
           updated_at?: string | null
+          user_id?: string | null
           winner_name?: string | null
         }
         Update: {
@@ -204,6 +209,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["artwork_status"]
           title?: string
           updated_at?: string | null
+          user_id?: string | null
           winner_name?: string | null
         }
         Relationships: []

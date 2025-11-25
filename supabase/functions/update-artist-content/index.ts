@@ -43,19 +43,8 @@ serve(async (req) => {
     const authenticatedUserId = user.id;
     console.log('Authenticated user ID:', authenticatedUserId);
 
-    // Step 2: Check if user is admin (authorization)
+    // Step 2: Initialize Supabase client (will use RLS with user's JWT)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const { data: roleData, error: roleError } = await supabase
-      .rpc('has_role', { _user_id: authenticatedUserId, _role: 'admin' });
-
-    if (roleError || !roleData) {
-      console.error('Authorization check failed:', roleError);
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Step 3: Parse request body
     const { bio_text, description, artwork_id } = await req.json();
@@ -84,15 +73,24 @@ serve(async (req) => {
       
       console.log('Sanitized bio_text:', sanitizedBio.substring(0, 100));
 
+      // CRITICAL: Match on user_id to enforce row-level authorization
       const { data: settingsData, error: settingsError } = await supabase
         .from('artist_settings')
         .update({ bio_text: sanitizedBio, updated_at: new Date().toISOString() })
+        .eq('user_id', authenticatedUserId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (settingsError) {
         console.error('Failed to update artist_settings:', settingsError);
         throw new Error(`Failed to update bio_text: ${settingsError.message}`);
+      }
+
+      if (!settingsData) {
+        return new Response(
+          JSON.stringify({ error: 'No artist settings found for this user. Please create settings first.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       results.artist_settings = settingsData;
@@ -118,16 +116,25 @@ serve(async (req) => {
       
       console.log('Sanitized description for artwork:', artwork_id);
 
+      // CRITICAL: Match on BOTH artwork_id AND user_id to enforce ownership
       const { data: artworkData, error: artworkError } = await supabase
         .from('artworks')
         .update({ description: sanitizedDescription, updated_at: new Date().toISOString() })
         .eq('id', artwork_id)
+        .eq('user_id', authenticatedUserId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (artworkError) {
         console.error('Failed to update artwork:', artworkError);
         throw new Error(`Failed to update artwork description: ${artworkError.message}`);
+      }
+
+      if (!artworkData) {
+        return new Response(
+          JSON.stringify({ error: 'Artwork not found or you do not have permission to update it' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       results.artwork = artworkData;
