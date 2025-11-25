@@ -49,24 +49,47 @@ export default function MyPurchases() {
 
   const fetchTransactionHistory = async () => {
     try {
+      // Get the currently authenticated user's access token (JWT) from active session
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      
+      if (!session?.access_token) {
+        toast({
+          title: "Authentication Required",
+          description: "Could not load history. Please try logging in again.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
 
-      // Call the edge function with JWT token in Authorization header
+      // Secure fetch: Call the Edge Function with token in Authorization header
       const { data, error } = await supabase.functions.invoke('get-transaction-history', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
       });
 
-      if (error) throw error;
+      // Error handling for authentication failures (401/403)
+      if (error) {
+        const status = error.message?.includes('401') || error.message?.includes('403');
+        if (status) {
+          toast({
+            title: "Authentication Failed",
+            description: "Could not load history. Please try logging in again.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
+        throw error;
+      }
       
-      // Extract transactions from response
+      // Data handling: Display the resulting array of transactions on success (200)
       setInvoices(data?.transactions || []);
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error Loading Transactions",
+        description: "Could not load history. Please try logging in again.",
         variant: "destructive",
       });
     } finally {
