@@ -27,6 +27,11 @@ import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Table,
   TableBody,
   TableCell,
@@ -47,8 +52,8 @@ const Index = () => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
-  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "gallery">("table");
+  const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
   const { currencyCode, setCurrency } = useCurrency();
@@ -87,11 +92,6 @@ const Index = () => {
     },
   });
 
-  // Filter artworks based on availability toggle
-  const displayedArtworks = showAvailableOnly 
-    ? artworks?.filter(artwork => artwork.status === "Available")
-    : artworks;
-
   const handleCardClick = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setEditDrawerOpen(true);
@@ -109,6 +109,8 @@ const Index = () => {
   };
 
   const handleExport = async (format: 'pdf' | 'docx') => {
+    setExportPopoverOpen(false);
+    
     try {
       toast({
         title: "Generating Export",
@@ -276,15 +278,6 @@ const Index = () => {
             {/* Action Bar */}
             <div className="flex flex-wrap gap-3">
               <Button 
-                onClick={() => setAddDrawerOpen(true)}
-                size="lg"
-                className="h-12 text-base font-semibold px-6"
-              >
-                <Plus className="mr-2 h-5 w-5" />
-                New Artwork
-              </Button>
-              
-              <Button 
                 variant="secondary"
                 onClick={() => setInvoiceDrawerOpen(true)}
                 size="lg"
@@ -294,36 +287,36 @@ const Index = () => {
                 Create Invoice
               </Button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
+                <PopoverTrigger asChild>
                   <Button 
                     variant="secondary"
                     size="lg"
                     className="h-12 text-base font-semibold px-6"
                   >
-                    <Download className="mr-2 h-5 w-5" />
-                    Export
+                    <List className="mr-2 h-5 w-5" />
+                    My Inventory
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-background">
-                  <DropdownMenuItem onClick={() => handleExport('pdf')} className="text-base py-3 cursor-pointer">
-                    Export as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('docx')} className="text-base py-3 cursor-pointer">
-                    Export as DOCX
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <Button 
-                variant={showAvailableOnly ? "default" : "secondary"}
-                onClick={() => setShowAvailableOnly(!showAvailableOnly)}
-                size="lg"
-                className="h-12 text-base font-semibold px-6"
-              >
-                <List className="mr-2 h-5 w-5" />
-                {showAvailableOnly ? "Show All" : "My Inventory"}
-              </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-0 bg-background" align="start">
+                  <div className="flex flex-col">
+                    <Button 
+                      variant="ghost" 
+                      className="justify-start text-base py-3 px-4 rounded-none"
+                      onClick={() => handleExport('pdf')}
+                    >
+                      Export as PDF
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="justify-start text-base py-3 px-4 rounded-none"
+                      onClick={() => handleExport('docx')}
+                    >
+                      Export as DOCX
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               <Button 
                 variant={viewMode === "gallery" ? "default" : "secondary"}
@@ -343,7 +336,7 @@ const Index = () => {
                 <div className="h-24 bg-muted rounded"></div>
                 <div className="h-24 bg-muted rounded"></div>
               </div>
-            ) : displayedArtworks && displayedArtworks.length > 0 ? (
+            ) : artworks && artworks.length > 0 ? (
               viewMode === "table" ? (
                 <div className="border border-border rounded-lg overflow-hidden bg-background">
                   <Table>
@@ -356,7 +349,7 @@ const Index = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayedArtworks.map((artwork) => (
+                      {artworks.map((artwork) => (
                         <TableRow 
                           key={artwork.id}
                           className="cursor-pointer hover:bg-muted/50 transition-colors h-16"
@@ -400,7 +393,7 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {displayedArtworks.map((artwork) => (
+                  {artworks.map((artwork) => (
                     <ArtworkCard
                       key={artwork.id}
                       artwork={artwork}
@@ -411,9 +404,7 @@ const Index = () => {
               )
             ) : (
               <div className="text-center py-16 border border-border rounded-lg bg-muted/20">
-                <p className="text-lg text-muted-foreground mb-4">
-                  {showAvailableOnly ? "No available artworks" : "No artworks yet"}
-                </p>
+                <p className="text-lg text-muted-foreground mb-4">No artworks yet</p>
                 <Button onClick={() => setAddDrawerOpen(true)} size="lg">
                   Add Your First Artwork
                 </Button>
