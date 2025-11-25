@@ -258,9 +258,11 @@ export type Database = {
       invoices: {
         Row: {
           artwork_id: string | null
+          carrier_name: string | null
           client_address: string
           client_email: string
           client_name: string
+          coa_url: string | null
           created_at: string | null
           final_sale_price: number
           id: string
@@ -268,16 +270,21 @@ export type Database = {
           pdf_url: string | null
           sale_date: string
           shipping_cost: number | null
+          shipping_date: string | null
           tax_amount: number | null
           tax_rate: number | null
           total_amount: number
+          tracking_number: string | null
+          transaction_status: string | null
           updated_at: string | null
         }
         Insert: {
           artwork_id?: string | null
+          carrier_name?: string | null
           client_address: string
           client_email: string
           client_name: string
+          coa_url?: string | null
           created_at?: string | null
           final_sale_price: number
           id?: string
@@ -285,16 +292,21 @@ export type Database = {
           pdf_url?: string | null
           sale_date: string
           shipping_cost?: number | null
+          shipping_date?: string | null
           tax_amount?: number | null
           tax_rate?: number | null
           total_amount: number
+          tracking_number?: string | null
+          transaction_status?: string | null
           updated_at?: string | null
         }
         Update: {
           artwork_id?: string | null
+          carrier_name?: string | null
           client_address?: string
           client_email?: string
           client_name?: string
+          coa_url?: string | null
           created_at?: string | null
           final_sale_price?: number
           id?: string
@@ -302,9 +314,12 @@ export type Database = {
           pdf_url?: string | null
           sale_date?: string
           shipping_cost?: number | null
+          shipping_date?: string | null
           tax_amount?: number | null
           tax_rate?: number | null
           total_amount?: number
+          tracking_number?: string | null
+          transaction_status?: string | null
           updated_at?: string | null
         }
         Relationships: [

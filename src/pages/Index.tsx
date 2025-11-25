@@ -23,6 +23,7 @@ import { ArtworkCard } from "@/components/ArtworkCard";
 import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
 import { EditArtworkDrawer } from "@/components/EditArtworkDrawer";
 import { InvoiceDrawer } from "@/components/InvoiceDrawer";
+import { TransactionWizard } from "@/components/TransactionWizard";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
@@ -49,6 +50,7 @@ const Index = () => {
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
+  const [transactionWizardOpen, setTransactionWizardOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
@@ -306,12 +308,12 @@ const Index = () => {
 
               <Button 
                 variant="secondary"
-                onClick={() => setInvoiceDrawerOpen(true)}
+                onClick={() => setTransactionWizardOpen(true)}
                 size="lg"
                 className="h-12 text-base font-semibold px-6"
               >
                 <DollarSign className="mr-2 h-5 w-5" />
-                Create Invoice
+                Manage Transaction
               </Button>
             </div>
 
@@ -540,6 +542,12 @@ const Index = () => {
       <InvoiceDrawer 
         open={invoiceDrawerOpen} 
         onOpenChange={setInvoiceDrawerOpen} 
+      />
+
+      <TransactionWizard
+        open={transactionWizardOpen}
+        onOpenChange={setTransactionWizardOpen}
+        onSuccess={refetch}
       />
 
       {selectedArtwork && (
