@@ -277,6 +277,7 @@ export type Database = {
           tracking_number: string | null
           transaction_status: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           artwork_id?: string | null
@@ -299,6 +300,7 @@ export type Database = {
           tracking_number?: string | null
           transaction_status?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           artwork_id?: string | null
@@ -321,6 +323,7 @@ export type Database = {
           tracking_number?: string | null
           transaction_status?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
