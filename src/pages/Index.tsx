@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, User, MessageSquare, Settings, X, Globe, ChevronDown, DollarSign, List, Grid } from "lucide-react";
+import { Plus, User, MessageSquare, Settings, X, Globe, ChevronDown, DollarSign, List, Grid, Download } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,6 +105,49 @@ const Index = () => {
   const handleProfileClose = (shouldClose: boolean) => {
     if (shouldClose) {
       setActiveTab("artworks");
+    }
+  };
+
+  const handleExport = async (format: 'pdf' | 'docx') => {
+    try {
+      toast({
+        title: "Generating Export",
+        description: `Creating ${format.toUpperCase()} document...`,
+      });
+
+      const { data, error } = await supabase.functions.invoke("export-inventory", {
+        body: { format },
+      });
+
+      if (error) throw error;
+
+      // The response is the file blob
+      const blob = new Blob([data], { 
+        type: format === 'pdf' 
+          ? 'application/pdf' 
+          : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventory-report-${Date.now()}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export Complete",
+        description: `Your ${format.toUpperCase()} file has been downloaded.`,
+      });
+    } catch (error: any) {
+      console.error("Error exporting inventory:", error);
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export inventory. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -250,6 +293,27 @@ const Index = () => {
                 <DollarSign className="mr-2 h-5 w-5" />
                 Create Invoice
               </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="secondary"
+                    size="lg"
+                    className="h-12 text-base font-semibold px-6"
+                  >
+                    <Download className="mr-2 h-5 w-5" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-background">
+                  <DropdownMenuItem onClick={() => handleExport('pdf')} className="text-base py-3 cursor-pointer">
+                    Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('docx')} className="text-base py-3 cursor-pointer">
+                    Export as DOCX
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               
               <Button 
                 variant={showAvailableOnly ? "default" : "secondary"}
