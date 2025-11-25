@@ -52,7 +52,7 @@ const Index = () => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
-  const [viewMode, setViewMode] = useState<"table" | "gallery">("table");
+  const [viewMode, setViewMode] = useState<"table" | "gallery">("gallery");
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
@@ -276,51 +276,65 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="artworks" className="space-y-6">
             {/* Action Bar */}
-            <div className="flex flex-wrap gap-3">
-              <Button 
-                variant="secondary"
-                onClick={() => setInvoiceDrawerOpen(true)}
-                size="lg"
-                className="h-12 text-base font-semibold px-6"
-              >
-                <DollarSign className="mr-2 h-5 w-5" />
-                Create Invoice
-              </Button>
+            <div className="flex flex-wrap gap-3 justify-between items-center">
+              <div className="flex gap-3 flex-wrap">
+                <Button 
+                  variant="secondary"
+                  onClick={() => setInvoiceDrawerOpen(true)}
+                  size="lg"
+                  className="h-12 text-base font-semibold px-6"
+                >
+                  <DollarSign className="mr-2 h-5 w-5" />
+                  Create Invoice
+                </Button>
 
-              <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="secondary"
-                    size="lg"
-                    className="h-12 text-base font-semibold px-6"
-                  >
-                    <List className="mr-2 h-5 w-5" />
-                    My Inventory
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-0 bg-background" align="start">
-                  <div className="flex flex-col">
-                    <Button 
-                      variant="ghost" 
-                      className="justify-start text-base py-3 px-4 rounded-none"
-                      onClick={() => handleExport('pdf')}
-                    >
-                      Export as PDF
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="justify-start text-base py-3 px-4 rounded-none"
-                      onClick={() => handleExport('docx')}
-                    >
-                      Export as DOCX
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                <Button 
+                  variant={viewMode === "table" ? "default" : "secondary"}
+                  onClick={() => setViewMode("table")}
+                  size="lg"
+                  className="h-12 text-base font-semibold px-6"
+                >
+                  <List className="mr-2 h-5 w-5" />
+                  My Inventory
+                </Button>
+
+                {viewMode === "table" && (
+                  <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="secondary"
+                        size="lg"
+                        className="h-12 text-base font-semibold px-6"
+                      >
+                        <Download className="mr-2 h-5 w-5" />
+                        Export
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-0 bg-background" align="start">
+                      <div className="flex flex-col">
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start text-base py-3 px-4 rounded-none"
+                          onClick={() => handleExport('pdf')}
+                        >
+                          Export as PDF
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          className="justify-start text-base py-3 px-4 rounded-none"
+                          onClick={() => handleExport('docx')}
+                        >
+                          Export as DOCX
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
 
               <Button 
                 variant={viewMode === "gallery" ? "default" : "secondary"}
-                onClick={() => setViewMode(viewMode === "table" ? "gallery" : "table")}
+                onClick={() => setViewMode("gallery")}
                 size="lg"
                 className="h-12 text-base font-semibold px-6"
               >
