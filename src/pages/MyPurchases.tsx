@@ -52,7 +52,7 @@ export default function MyPurchases() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Call the edge function with automatic JWT token inclusion
+      // Call the edge function with JWT token in Authorization header
       const { data, error } = await supabase.functions.invoke('get-transaction-history', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
@@ -60,7 +60,9 @@ export default function MyPurchases() {
       });
 
       if (error) throw error;
-      setInvoices(data || []);
+      
+      // Extract transactions from response
+      setInvoices(data?.transactions || []);
     } catch (error: any) {
       toast({
         title: "Error",

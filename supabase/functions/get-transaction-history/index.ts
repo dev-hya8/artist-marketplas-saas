@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
     console.log(`Fetching transaction history for user: ${user.id}`)
 
     // Fetch user's transaction history
-    // RLS policies will automatically filter to only this user's invoices
+    // RLS policy automatically filters to only show this user's invoices
+    // No explicit user_id filter needed - RLS handles authorization
     const { data: invoices, error: queryError } = await supabase
       .from('invoices')
       .select(`
@@ -64,7 +65,6 @@ Deno.serve(async (req) => {
           dimensions
         )
       `)
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
     if (queryError) {
