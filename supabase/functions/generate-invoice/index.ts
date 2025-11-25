@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import { checkRateLimit, createRateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,15 +9,40 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client with service role key for admin operations
+    // Initialize environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Initialize Supabase client with service role key for admin operations
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Step 1: Rate Limit Check (CRITICAL SECURITY - First line of defense)
+    // Extract client IP address from headers
+    const clientIp = req.headers.get('x-real-ip') || 
+                     req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                     'unknown';
+    
+    // Check rate limit with STRICT limit for high-cost invoice operations
+    const rateLimitResult = await checkRateLimit(
+      supabase,
+      clientIp,
+      '/functions/generate-invoice',
+      5 // STRICT: Only 5 requests per minute (invoice generation is expensive)
+    );
+
+    // If rate limit exceeded, immediately return 429 response
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for IP ${clientIp} on /functions/generate-invoice`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
+    }
+
+    console.log(`Rate limit check passed for IP ${clientIp}: ${rateLimitResult.remaining}/${rateLimitResult.limit} remaining`);
 
     // Security Constraint: Retrieve authenticated user ID from JWT token
     // This prevents client-side tampering with user_id
