@@ -99,8 +99,23 @@ export default function MyPurchases() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
+    try {
+      // Log Critical Authentication Event: LOGOUT_SUCCESS
+      await supabase.functions.invoke('log-audit-event', {
+        body: {
+          action: 'LOGOUT_SUCCESS',
+          metadata: { email: userEmail }
+        }
+      });
+      
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still sign out even if logging fails
+      await supabase.auth.signOut();
+      navigate("/");
+    }
   };
 
   const formatDate = (dateString: string) => {
