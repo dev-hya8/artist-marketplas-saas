@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sanitizeFreeText } from "../_shared/sanitization.ts";
+import { checkRateLimit, createRateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,16 +9,43 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Initialize environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Step 1: Authenticate user from JWT
+    // Initialize Supabase client with service role (needed for rate limiting)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Step 1: Rate Limit Check (CRITICAL SECURITY - First line of defense)
+    // Extract client IP address from headers
+    const clientIp = req.headers.get('x-real-ip') || 
+                     req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                     'unknown';
+    
+    // Check rate limit using IP as identifier (admin bypass happens inside checkRateLimit)
+    const rateLimitResult = await checkRateLimit(
+      supabase,
+      clientIp,
+      '/functions/update-artist-content',
+      30 // 30 requests per minute limit
+    );
+
+    // If rate limit exceeded, immediately return 429 response
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for IP ${clientIp} on /functions/update-artist-content`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
+    }
+
+    console.log(`Rate limit check passed for IP ${clientIp}: ${rateLimitResult.remaining}/${rateLimitResult.limit} remaining`);
+    
+    // Step 2: Authenticate user from JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -43,8 +71,7 @@ serve(async (req) => {
     const authenticatedUserId = user.id;
     console.log('Authenticated user ID:', authenticatedUserId);
 
-    // Step 2: Initialize Supabase client (will use RLS with user's JWT)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Note: Supabase client already initialized above for rate limiting
 
     // Step 3: Parse request body
     const { bio_text, description, artwork_id } = await req.json();
