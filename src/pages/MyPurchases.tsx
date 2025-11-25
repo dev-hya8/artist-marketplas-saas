@@ -52,17 +52,12 @@ export default function MyPurchases() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { data, error } = await supabase
-        .from("invoices")
-        .select(`
-          *,
-          artworks (
-            title,
-            image_url
-          )
-        `)
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false });
+      // Call the edge function with automatic JWT token inclusion
+      const { data, error } = await supabase.functions.invoke('get-transaction-history', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
       if (error) throw error;
       setInvoices(data || []);
