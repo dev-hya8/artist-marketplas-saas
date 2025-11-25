@@ -13,9 +13,31 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client with service role key for admin operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Security Constraint: Retrieve authenticated user ID from JWT token
+    // This prevents client-side tampering with user_id
+    let authenticatedUserId = null;
+    const authHeader = req.headers.get('Authorization');
+    
+    if (authHeader) {
+      // Create a client with the user's JWT to verify authentication
+      const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const userClient = createClient(supabaseUrl, supabaseAnon, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      
+      // Retrieve User ID: Get the authenticated user's ID from the session
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      
+      if (!authError && user) {
+        authenticatedUserId = user.id;
+        console.log('Authenticated user ID retrieved:', authenticatedUserId);
+      }
+    }
 
     const {
       artworkId,
@@ -26,7 +48,7 @@ serve(async (req) => {
       finalSalePrice,
       shippingCost,
       taxRate,
-      userId = null, // Optional user ID for linking to authenticated users
+      // Remove userId from request body - we get it securely from JWT instead
     } = await req.json();
 
     console.log('Generating invoice for artwork:', artworkId);
@@ -301,7 +323,8 @@ serve(async (req) => {
 
     const pdfUrl = urlData.publicUrl;
 
-    // Save invoice record to database
+    // Secure Database Insert: Save invoice with authenticated user's ID
+    // The user_id comes from the JWT token, not the request body
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
       .insert({
@@ -317,7 +340,7 @@ serve(async (req) => {
         tax_amount: taxAmount,
         total_amount: totalAmount,
         pdf_url: pdfUrl,
-        user_id: userId, // Link to authenticated user if provided
+        user_id: authenticatedUserId, // Securely retrieved from JWT, cannot be tampered with
       })
       .select()
       .single();

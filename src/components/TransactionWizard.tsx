@@ -115,9 +115,6 @@ export function TransactionWizard({ open, onOpenChange, onSuccess }: Transaction
 
     setIsProcessing(true);
     try {
-      // Get current user session (for linking to authenticated users)
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke("generate-invoice", {
         body: {
           artworkId: selectedArtworkId,
@@ -128,7 +125,7 @@ export function TransactionWizard({ open, onOpenChange, onSuccess }: Transaction
           finalSalePrice: parseFloat(finalSalePrice),
           shippingCost: parseFloat(shippingCost),
           taxRate: parseFloat(taxRate),
-          userId: session?.user?.id || null, // Pass user ID if available
+          // No longer passing userId - it's retrieved securely from JWT on server
         },
       });
 
