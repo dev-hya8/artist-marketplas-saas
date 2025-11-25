@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogOut, FileText, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface Invoice {
   id: string;
@@ -34,17 +35,17 @@ export default function MyPurchases() {
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    checkAuth();
+    // Auth is already checked by ProtectedRoute wrapper
+    // Just fetch user info and transaction history
+    getUserInfo();
     fetchTransactionHistory();
   }, []);
 
-  const checkAuth = async () => {
+  const getUserInfo = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
+    if (session?.user?.email) {
+      setUserEmail(session.user.email);
     }
-    setUserEmail(session.user.email || "");
   };
 
   const fetchTransactionHistory = async () => {
@@ -126,7 +127,8 @@ export default function MyPurchases() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">My Purchases</h1>
@@ -218,5 +220,6 @@ export default function MyPurchases() {
         )}
       </main>
     </div>
+    </ProtectedRoute>
   );
 }
