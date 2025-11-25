@@ -520,14 +520,16 @@ const Index = () => {
         </Tabs>
       </main>
 
-      {/* Floating Action Button */}
-      <Button
-        size="lg"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
-        onClick={() => setAddDrawerOpen(true)}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
+      {/* Floating Action Button - Only visible in Gallery View */}
+      {viewMode === "gallery" && (
+        <Button
+          size="lg"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          onClick={() => setAddDrawerOpen(true)}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
 
       <AddArtworkDrawer
         open={addDrawerOpen}
