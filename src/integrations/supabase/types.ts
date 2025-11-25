@@ -34,6 +34,7 @@ export type Database = {
           id: string
           instagram_handle: string | null
           measurement_unit: string | null
+          payment_terms: string | null
           phone_number: string | null
           primary_contact_method: string | null
           public_profile_enabled: boolean | null
@@ -61,6 +62,7 @@ export type Database = {
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
+          payment_terms?: string | null
           phone_number?: string | null
           primary_contact_method?: string | null
           public_profile_enabled?: boolean | null
@@ -88,6 +90,7 @@ export type Database = {
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
+          payment_terms?: string | null
           phone_number?: string | null
           primary_contact_method?: string | null
           public_profile_enabled?: boolean | null
@@ -245,6 +248,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "inquiries_artwork_id_fkey"
+            columns: ["artwork_id"]
+            isOneToOne: false
+            referencedRelation: "artworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          artwork_id: string | null
+          client_address: string
+          client_email: string
+          client_name: string
+          created_at: string | null
+          final_sale_price: number
+          id: string
+          invoice_number: string
+          pdf_url: string | null
+          sale_date: string
+          shipping_cost: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          artwork_id?: string | null
+          client_address: string
+          client_email: string
+          client_name: string
+          created_at?: string | null
+          final_sale_price: number
+          id?: string
+          invoice_number: string
+          pdf_url?: string | null
+          sale_date: string
+          shipping_cost?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          artwork_id?: string | null
+          client_address?: string
+          client_email?: string
+          client_name?: string
+          created_at?: string | null
+          final_sale_price?: number
+          id?: string
+          invoice_number?: string
+          pdf_url?: string | null
+          sale_date?: string
+          shipping_cost?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_artwork_id_fkey"
             columns: ["artwork_id"]
             isOneToOne: false
             referencedRelation: "artworks"
