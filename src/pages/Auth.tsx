@@ -8,6 +8,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+// Input validation schemas
+const signUpSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  email: z.string()
+    .trim()
+    .email({ message: "Invalid email address" })
+    .max(255, { message: "Email must be less than 255 characters" }),
+  password: z.string()
+    .min(6, { message: "Password must be at least 6 characters" })
+    .max(128, { message: "Password must be less than 128 characters" })
+});
+
+const signInSchema = z.object({
+  email: z.string()
+    .trim()
+    .email({ message: "Invalid email address" })
+    .max(255, { message: "Email must be less than 255 characters" }),
+  password: z.string()
+    .min(1, { message: "Password is required" })
+    .max(128, { message: "Password must be less than 128 characters" })
+});
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -37,16 +63,25 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    
+    // Validate inputs before submission
     try {
+      const validated = signUpSchema.parse({
+        name: name.trim(),
+        email: email.trim(),
+        password: password
+      });
+
+      setLoading(true);
+
+      // SignupForm: Use Supabase client to register new client
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validated.email,
+        password: validated.password,
         options: {
           emailRedirectTo: `${window.location.origin}/my-purchases`,
           data: {
-            full_name: name,
+            full_name: validated.name,
           }
         }
       });
@@ -57,12 +92,25 @@ export default function Auth() {
         title: "Success!",
         description: "Please check your email to confirm your account.",
       });
+      
+      // Clear form
+      setEmail("");
+      setPassword("");
+      setName("");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -70,26 +118,45 @@ export default function Auth() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    
+    // Validate inputs before submission
     try {
+      const validated = signInSchema.parse({
+        email: email.trim(),
+        password: password
+      });
+
+      setLoading(true);
+
+      // LoginForm: Use Supabase client to authenticate the client
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: validated.email,
+        password: validated.password,
       });
 
       if (error) throw error;
 
       toast({
         title: "Success!",
-        description: "You've been signed in.",
+        description: "You've been signed in. Redirecting...",
       });
+      
+      // Redirection: After successful login, redirect to Transaction History page
+      // Note: The useEffect with onAuthStateChange handles the actual redirect
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -119,6 +186,7 @@ export default function Auth() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    maxLength={255}
                     required
                   />
                 </div>
@@ -129,6 +197,7 @@ export default function Auth() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    maxLength={128}
                     required
                   />
                 </div>
@@ -149,6 +218,7 @@ export default function Auth() {
                     placeholder="John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    maxLength={100}
                     required
                   />
                 </div>
@@ -160,6 +230,7 @@ export default function Auth() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    maxLength={255}
                     required
                   />
                 </div>
@@ -170,8 +241,9 @@ export default function Auth() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                     minLength={6}
+                    maxLength={128}
+                    required
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
