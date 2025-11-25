@@ -26,6 +26,7 @@ serve(async (req) => {
       finalSalePrice,
       shippingCost,
       taxRate,
+      userId = null, // Optional user ID for linking to authenticated users
     } = await req.json();
 
     console.log('Generating invoice for artwork:', artworkId);
@@ -316,6 +317,7 @@ serve(async (req) => {
         tax_amount: taxAmount,
         total_amount: totalAmount,
         pdf_url: pdfUrl,
+        user_id: userId, // Link to authenticated user if provided
       })
       .select()
       .single();
