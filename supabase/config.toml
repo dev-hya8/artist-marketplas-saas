@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.log-audit-event]
+verify_jwt = true

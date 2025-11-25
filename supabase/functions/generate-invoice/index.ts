@@ -350,6 +350,25 @@ serve(async (req) => {
       throw invoiceError;
     }
 
+    // Log Critical Transaction Event: INVOICE_GENERATED
+    await supabase
+      .from('audit_logs')
+      .insert({
+        user_id: authenticatedUserId,
+        action: 'INVOICE_GENERATED',
+        resource_id: invoice.id,
+        metadata: {
+          invoice_number: invoiceNumber,
+          artwork_id: artworkId,
+          total_amount: totalAmount,
+        },
+      })
+      .then(({ error: logError }) => {
+        if (logError) {
+          console.error('Failed to create audit log:', logError);
+        }
+      });
+
     console.log('Invoice generated successfully:', invoiceNumber);
 
     return new Response(

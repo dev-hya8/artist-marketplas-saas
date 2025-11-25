@@ -112,6 +112,14 @@ export default function Auth() {
 
       if (error) throw error;
 
+      // Log Critical Authentication Event: SIGNUP_SUCCESS
+      await supabase.functions.invoke('log-audit-event', {
+        body: {
+          action: 'SIGNUP_SUCCESS',
+          metadata: { email: validation.data!.email }
+        }
+      });
+
       toast({
         title: "Success!",
         description: "Please check your email to confirm your account.",
@@ -156,6 +164,14 @@ export default function Auth() {
       });
 
       if (error) throw error;
+
+      // Log Critical Authentication Event: LOGIN_SUCCESS
+      await supabase.functions.invoke('log-audit-event', {
+        body: {
+          action: 'LOGIN_SUCCESS',
+          metadata: { email: validation.data!.email }
+        }
+      });
 
       toast({
         title: "Success!",
