@@ -132,9 +132,9 @@ export function InvoiceDrawer({ open, onOpenChange }: InvoiceDrawerProps) {
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader className="border-b border-border bg-muted/30">
+    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+      <DrawerContent className="fixed inset-y-0 right-0 left-auto h-screen w-full max-w-4xl border-l border-border bg-background rounded-none">
+        <DrawerHeader className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <DrawerTitle className="text-2xl font-bold text-foreground">
               Generate New Invoice
@@ -147,8 +147,8 @@ export function InvoiceDrawer({ open, onOpenChange }: InvoiceDrawerProps) {
           </div>
         </DrawerHeader>
 
-        <div className="overflow-y-auto px-6 py-6">
-          <div className="space-y-8 max-w-2xl mx-auto">
+        <div className="overflow-y-auto px-6 py-6 flex-1 bg-background">
+          <div className="space-y-8 max-w-2xl mx-auto pb-24">
             {/* Artwork Selection */}
             <div className="space-y-3">
               <Label htmlFor="artwork" className="text-base font-semibold text-foreground">
@@ -295,7 +295,7 @@ export function InvoiceDrawer({ open, onOpenChange }: InvoiceDrawerProps) {
           </div>
         </div>
 
-        <DrawerFooter className="border-t border-border bg-muted/30">
+        <DrawerFooter className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky bottom-0">
           <div className="flex gap-3 max-w-2xl mx-auto w-full">
             <Button
               onClick={handleGenerateInvoice}
