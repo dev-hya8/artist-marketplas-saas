@@ -284,36 +284,39 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="artworks" className="space-y-6">
-            {/* Action Bar */}
-            <div className="flex flex-wrap gap-3 items-center">
+            {/* Action Bar - Main Controls */}
+            <div className="flex gap-2 items-center w-full">
               <Button 
                 variant={viewMode === "gallery" ? "default" : "secondary"}
                 onClick={() => setViewMode("gallery")}
                 size="lg"
-                className="h-12 text-base font-semibold px-6"
+                className="h-12 text-sm sm:text-base font-semibold px-3 sm:px-6 flex-1"
               >
-                <Grid className="mr-2 h-5 w-5" />
-                Gallery View
+                <Grid className="mr-1 sm:mr-2 h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="hidden sm:inline">Gallery View</span>
+                <span className="sm:hidden">Gallery</span>
               </Button>
 
               <Button 
                 variant={viewMode === "table" ? "default" : "secondary"}
                 onClick={() => setViewMode("table")}
                 size="lg"
-                className="h-12 text-base font-semibold px-6"
+                className="h-12 text-sm sm:text-base font-semibold px-3 sm:px-6 flex-1"
               >
-                <List className="mr-2 h-5 w-5" />
-                My Inventory
+                <List className="mr-1 sm:mr-2 h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="hidden sm:inline">My Inventory</span>
+                <span className="sm:hidden">Inventory</span>
               </Button>
 
               <Button 
                 variant="secondary"
                 onClick={() => setTransactionWizardOpen(true)}
                 size="lg"
-                className="h-12 text-base font-semibold px-6"
+                className="h-12 text-sm sm:text-base font-semibold px-3 sm:px-6 flex-1"
               >
-                <DollarSign className="mr-2 h-5 w-5" />
-                Manage Transaction
+                <DollarSign className="mr-1 sm:mr-2 h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="hidden sm:inline">Manage Transaction</span>
+                <span className="sm:hidden">Transaction</span>
               </Button>
             </div>
 
