@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.log-audit-event]
 verify_jwt = true
+
+[functions.update-artist-content]
+verify_jwt = true
