@@ -1,8 +1,9 @@
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Upload, User, MessageSquare, Settings, X, Globe, ChevronDown } from "lucide-react";
+import { Plus, User, MessageSquare, Settings, X, Globe, ChevronDown, DollarSign, List } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -18,12 +19,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ArtworkCard } from "@/components/ArtworkCard";
 import { AddArtworkDrawer } from "@/components/AddArtworkDrawer";
 import { EditArtworkDrawer } from "@/components/EditArtworkDrawer";
+import { InvoiceDrawer } from "@/components/InvoiceDrawer";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import type { Tables } from "@/integrations/supabase/types";
@@ -33,10 +42,11 @@ type Artwork = Tables<"artworks">;
 const Index = () => {
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("artworks");
-  const [profileDrawerClosing, setProfileDrawerClosing] = useState(false);
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const { toast } = useToast();
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
   const { currencyCode, setCurrency } = useCurrency();
@@ -74,6 +84,11 @@ const Index = () => {
       return data as Artwork[];
     },
   });
+
+  // Filter artworks based on availability toggle
+  const displayedArtworks = showAvailableOnly 
+    ? artworks?.filter(artwork => artwork.status === "Available")
+    : artworks;
 
   const handleCardClick = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
@@ -212,26 +227,106 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsContent value="artworks">
+          <TabsContent value="artworks" className="space-y-6">
+            {/* Action Bar */}
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={() => setAddDrawerOpen(true)}
+                size="lg"
+                className="h-12 text-base font-semibold px-6"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                New Artwork
+              </Button>
+              
+              <Button 
+                variant="secondary"
+                onClick={() => setInvoiceDrawerOpen(true)}
+                size="lg"
+                className="h-12 text-base font-semibold px-6"
+              >
+                <DollarSign className="mr-2 h-5 w-5" />
+                Create Invoice
+              </Button>
+              
+              <Button 
+                variant={showAvailableOnly ? "default" : "secondary"}
+                onClick={() => setShowAvailableOnly(!showAvailableOnly)}
+                size="lg"
+                className="h-12 text-base font-semibold px-6"
+              >
+                <List className="mr-2 h-5 w-5" />
+                {showAvailableOnly ? "Show All" : "My Inventory"}
+              </Button>
+            </div>
+
+            {/* Inventory Table */}
             {isLoading ? (
-              <div className="flex justify-center items-center min-h-[50vh]">
-                <p className="text-muted-foreground">Loading artworks...</p>
+              <div className="animate-pulse space-y-3">
+                <div className="h-12 bg-muted rounded"></div>
+                <div className="h-24 bg-muted rounded"></div>
+                <div className="h-24 bg-muted rounded"></div>
               </div>
-            ) : artworks && artworks.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                {artworks.map((artwork) => (
-                  <ArtworkCard
-                    key={artwork.id}
-                    artwork={artwork}
-                    onClick={() => handleCardClick(artwork)}
-                  />
-                ))}
+            ) : displayedArtworks && displayedArtworks.length > 0 ? (
+              <div className="border border-border rounded-lg overflow-hidden bg-background">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-bold text-base h-14">Title</TableHead>
+                      <TableHead className="font-bold text-base h-14">Price</TableHead>
+                      <TableHead className="font-bold text-base h-14">Status</TableHead>
+                      <TableHead className="font-bold text-base h-14">Date Listed</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {displayedArtworks.map((artwork) => (
+                      <TableRow 
+                        key={artwork.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors h-16"
+                        onClick={() => handleCardClick(artwork)}
+                      >
+                        <TableCell className="font-medium text-base">{artwork.title}</TableCell>
+                        <TableCell className="text-base">
+                          {artwork.price 
+                            ? `${CURRENCIES.find(c => c.code === currencyCode)?.symbol}${artwork.price.toLocaleString()}` 
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {artwork.status === "Available" && (
+                            <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
+                              <span className="mr-1.5">●</span> Available
+                            </Badge>
+                          )}
+                          {artwork.status === "Sold" && (
+                            <Badge variant="destructive">
+                              <span className="mr-1.5">●</span> Sold
+                            </Badge>
+                          )}
+                          {artwork.status === "On Loan" && (
+                            <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                              <span className="mr-1.5">●</span> On Loan {artwork.location && `at ${artwork.location}`}
+                            </Badge>
+                          )}
+                          {artwork.status === "Reserved" && (
+                            <Badge variant="secondary">
+                              <span className="mr-1.5">●</span> Reserved
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-base text-muted-foreground">
+                          {artwork.created_at ? format(new Date(artwork.created_at), "dd MMM yyyy") : "N/A"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-                <p className="text-muted-foreground mb-4">No artworks yet</p>
-                <Button onClick={() => setAddDrawerOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
+              <div className="text-center py-16 border border-border rounded-lg bg-muted/20">
+                <p className="text-lg text-muted-foreground mb-4">
+                  {showAvailableOnly ? "No available artworks" : "No artworks yet"}
+                </p>
+                <Button onClick={() => setAddDrawerOpen(true)} size="lg">
                   Add Your First Artwork
                 </Button>
               </div>
@@ -290,6 +385,11 @@ const Index = () => {
         open={addDrawerOpen}
         onOpenChange={setAddDrawerOpen}
         onSuccess={refetch}
+      />
+
+      <InvoiceDrawer 
+        open={invoiceDrawerOpen} 
+        onOpenChange={setInvoiceDrawerOpen} 
       />
 
       {selectedArtwork && (
