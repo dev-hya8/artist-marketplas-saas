@@ -8,32 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { z } from "zod";
-
-// Input validation schemas
-const signUpSchema = z.object({
-  name: z.string()
-    .trim()
-    .min(2, { message: "Name must be at least 2 characters" })
-    .max(100, { message: "Name must be less than 100 characters" }),
-  email: z.string()
-    .trim()
-    .email({ message: "Invalid email address" })
-    .max(255, { message: "Email must be less than 255 characters" }),
-  password: z.string()
-    .min(6, { message: "Password must be at least 6 characters" })
-    .max(128, { message: "Password must be less than 128 characters" })
-});
-
-const signInSchema = z.object({
-  email: z.string()
-    .trim()
-    .email({ message: "Invalid email address" })
-    .max(255, { message: "Email must be less than 255 characters" }),
-  password: z.string()
-    .min(1, { message: "Password is required" })
-    .max(128, { message: "Password must be less than 128 characters" })
-});
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -61,27 +35,77 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Client-side validation helper
+  const validateSignUp = (data: { name: string; email: string; password: string }) => {
+    const trimmedName = data.name.trim();
+    const trimmedEmail = data.email.trim();
+    
+    if (trimmedName.length < 2) {
+      return { valid: false, error: "Name must be at least 2 characters" };
+    }
+    if (trimmedName.length > 100) {
+      return { valid: false, error: "Name must be less than 100 characters" };
+    }
+    if (!trimmedEmail.includes('@')) {
+      return { valid: false, error: "Invalid email address" };
+    }
+    if (trimmedEmail.length > 255) {
+      return { valid: false, error: "Email must be less than 255 characters" };
+    }
+    if (data.password.length < 6) {
+      return { valid: false, error: "Password must be at least 6 characters" };
+    }
+    if (data.password.length > 128) {
+      return { valid: false, error: "Password must be less than 128 characters" };
+    }
+    
+    return { valid: true, data: { name: trimmedName, email: trimmedEmail, password: data.password } };
+  };
+
+  const validateSignIn = (data: { email: string; password: string }) => {
+    const trimmedEmail = data.email.trim();
+    
+    if (!trimmedEmail.includes('@')) {
+      return { valid: false, error: "Invalid email address" };
+    }
+    if (trimmedEmail.length > 255) {
+      return { valid: false, error: "Email must be less than 255 characters" };
+    }
+    if (data.password.length < 1) {
+      return { valid: false, error: "Password is required" };
+    }
+    if (data.password.length > 128) {
+      return { valid: false, error: "Password must be less than 128 characters" };
+    }
+    
+    return { valid: true, data: { email: trimmedEmail, password: data.password } };
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate inputs before submission
-    try {
-      const validated = signUpSchema.parse({
-        name: name.trim(),
-        email: email.trim(),
-        password: password
+    const validation = validateSignUp({ name, email, password });
+    
+    if (!validation.valid) {
+      toast({
+        title: "Validation Error",
+        description: validation.error,
+        variant: "destructive",
       });
+      return;
+    }
 
-      setLoading(true);
-
+    setLoading(true);
+    try {
       // SignupForm: Use Supabase client to register new client
       const { error } = await supabase.auth.signUp({
-        email: validated.email,
-        password: validated.password,
+        email: validation.data!.email,
+        password: validation.data!.password,
         options: {
           emailRedirectTo: `${window.location.origin}/my-purchases`,
           data: {
-            full_name: validated.name,
+            full_name: validation.data!.name,
           }
         }
       });
@@ -98,19 +122,11 @@ export default function Auth() {
       setPassword("");
       setName("");
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Validation Error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -120,18 +136,23 @@ export default function Auth() {
     e.preventDefault();
     
     // Validate inputs before submission
-    try {
-      const validated = signInSchema.parse({
-        email: email.trim(),
-        password: password
+    const validation = validateSignIn({ email, password });
+    
+    if (!validation.valid) {
+      toast({
+        title: "Validation Error",
+        description: validation.error,
+        variant: "destructive",
       });
+      return;
+    }
 
-      setLoading(true);
-
+    setLoading(true);
+    try {
       // LoginForm: Use Supabase client to authenticate the client
       const { error } = await supabase.auth.signInWithPassword({
-        email: validated.email,
-        password: validated.password,
+        email: validation.data!.email,
+        password: validation.data!.password,
       });
 
       if (error) throw error;
@@ -144,19 +165,11 @@ export default function Auth() {
       // Redirection: After successful login, redirect to Transaction History page
       // Note: The useEffect with onAuthStateChange handles the actual redirect
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Validation Error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
