@@ -51,8 +51,8 @@ const App = () => (
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/gallery" element={<Home />} />
                   <Route path="/artist" element={<ArtistProfile />} />
-                  {/* Dynamic artist handle route - MUST be last before catch-all */}
-                  <Route path="/artist/:handle" element={<PublicGallery />} />
+                  {/* Redirect artist handle to gallery */}
+                  <Route path="/artist/:handle" element={<Navigate to="/gallery" replace />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
