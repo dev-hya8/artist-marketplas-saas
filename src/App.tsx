@@ -50,7 +50,6 @@ const App = () => (
                   <Route path="/cv" element={<CV />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/gallery" element={<Navigate to="/" replace />} />
-                  <Route path="/artist" element={<ArtistProfile />} />
                   {/* Dynamic artist handle route - MUST be last before catch-all */}
                   <Route path="/artist/:handle" element={<PublicGallery />} />
                   <Route path="*" element={<NotFound />} />
