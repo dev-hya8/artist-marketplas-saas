@@ -40,8 +40,8 @@ export default function GalleryReady() {
     fetchArtistInfo();
   }, [navigate]);
 
-  const fullUrl = handle ? `hyaandco.com/${handle}` : "";
-  const liveUrl = handle ? `${window.location.origin}/${handle}` : "";
+  const fullUrl = handle ? `hyaandco.com/artist/${handle}` : "";
+  const liveUrl = handle ? `${window.location.origin}/artist/${handle}` : "";
 
   const handleCopy = async () => {
     try {
@@ -122,7 +122,7 @@ export default function GalleryReady() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => navigate(`/${handle}`)}
+                  onClick={() => navigate(`/artist/${handle}`)}
                   className="h-11 px-6"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />

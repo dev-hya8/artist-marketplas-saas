@@ -7,6 +7,7 @@ import { ArtistSettingsProvider } from "@/contexts/ArtistSettingsContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { Suspense, lazy } from 'react';
+import { Navigate } from 'react-router-dom';
 
 // Lazy load pages
 const Landing = lazy(() => import("./pages/Landing"));
@@ -48,10 +49,10 @@ const App = () => (
                   <Route path="/about" element={<About />} />
                   <Route path="/cv" element={<CV />} />
                   <Route path="/contact" element={<Contact />} />
-                  <Route path="/gallery" element={<Home />} />
+                  <Route path="/gallery" element={<Navigate to="/" replace />} />
                   <Route path="/artist" element={<ArtistProfile />} />
                   {/* Dynamic artist handle route - MUST be last before catch-all */}
-                  <Route path="/:handle" element={<PublicGallery />} />
+                  <Route path="/artist/:handle" element={<PublicGallery />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
