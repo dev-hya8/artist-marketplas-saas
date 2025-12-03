@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { Suspense, lazy } from 'react';
 
 // Lazy load pages
+const Landing = lazy(() => import("./pages/Landing"));
 const Home = lazy(() => import("./pages/Home"));
 const Index = lazy(() => import("./pages/Index"));
 const About = lazy(() => import("./pages/About"));
@@ -35,19 +36,20 @@ const App = () => (
             <BrowserRouter>
               <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                 <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/cv" element={<CV />} />
-                  <Route path="/contact" element={<Contact />} />
+                  {/* Static routes first */}
+                  <Route path="/" element={<Landing />} />
                   <Route path="/dashboard" element={<Index />} />
                   <Route path="/admin" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/signup" element={<ArtistSignup />} />
                   <Route path="/history" element={<MyPurchases />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/cv" element={<CV />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/gallery" element={<Home />} />
                   <Route path="/artist" element={<ArtistProfile />} />
-                  {/* Dynamic artist handle route - must be before catch-all */}
+                  {/* Dynamic artist handle route - MUST be last before catch-all */}
                   <Route path="/:handle" element={<PublicGallery />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
