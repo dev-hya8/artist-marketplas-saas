@@ -1,80 +1,72 @@
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { ArtistProfileHeader } from "@/components/artist-profile/ArtistProfileHeader";
 import { ArtworkGrid } from "@/components/artist-profile/ArtworkGrid";
 import { ArtistProfileFooter } from "@/components/artist-profile/ArtistProfileFooter";
 import { ProfileInquiryModal } from "@/components/artist-profile/ProfileInquiryModal";
-
-// Placeholder artwork data for the mosaic artist
-const PLACEHOLDER_ARTWORKS = [
-  {
-    id: "1",
-    title: "Fragmented Reality",
-    medium: "Hand-cut Mosaic & Acrylic",
-    dimensions: "24 x 36 in",
-    price: 1200,
-    imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&q=80",
-  },
-  {
-    id: "2",
-    title: "Mosaic Dreams",
-    medium: "Glass Tessellation on Canvas",
-    dimensions: "30 x 40 in",
-    price: 1800,
-    imageUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600&q=80",
-  },
-  {
-    id: "3",
-    title: "Chromatic Puzzle",
-    medium: "Mixed Media Mosaic",
-    dimensions: "18 x 24 in",
-    price: 950,
-    imageUrl: "https://images.unsplash.com/photo-1549490349-8643362247b5?w=600&q=80",
-  },
-  {
-    id: "4",
-    title: "Shattered Light",
-    medium: "Stained Glass & Resin",
-    dimensions: "36 x 48 in",
-    price: 2400,
-    imageUrl: "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=600&q=80",
-  },
-  {
-    id: "5",
-    title: "Tessellated Horizon",
-    medium: "Ceramic Tile Mosaic",
-    dimensions: "20 x 30 in",
-    price: 1100,
-    imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-  },
-  {
-    id: "6",
-    title: "Pixel Garden",
-    medium: "Hand-cut Stone & Glass",
-    dimensions: "28 x 28 in",
-    price: 1650,
-    imageUrl: "https://images.unsplash.com/photo-1482160549825-59d1b23cb208?w=600&q=80",
-  },
-];
+import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
 
 interface ArtistSettings {
+  id: string;
+  user_id: string | null;
   display_name: string;
   artist_bio?: string | null;
   avatar_url?: string | null;
   contact_email?: string | null;
 }
 
-interface ArtistProfileProps {
-  artistSettings?: ArtistSettings;
+interface Artwork {
+  id: string;
+  title: string;
+  medium: string | null;
+  dimensions: string | null;
+  price: number | null;
+  image_url: string | null;
 }
 
-export default function ArtistProfile({ artistSettings }: ArtistProfileProps) {
-  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
-  const [selectedArtwork, setSelectedArtwork] = useState<typeof PLACEHOLDER_ARTWORKS[0] | null>(null);
-  const [activeSection, setActiveSection] = useState<"works" | "about" | "contact">("works");
+interface ArtistProfileProps {
+  artistSettings?: ArtistSettings;
+  artworks?: Artwork[];
+}
 
-  const handleInquire = (artwork: typeof PLACEHOLDER_ARTWORKS[0]) => {
-    setSelectedArtwork(artwork);
+export default function ArtistProfile({ artistSettings, artworks = [] }: ArtistProfileProps) {
+  const navigate = useNavigate();
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [activeSection, setActiveSection] = useState<"works" | "about" | "contact">("works");
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (!artistSettings?.user_id) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id === artistSettings.user_id) {
+        setIsOwner(true);
+      }
+    };
+    
+    checkOwnership();
+  }, [artistSettings?.user_id]);
+
+  // Type for display artworks matching ArtworkGrid expectations
+  type DisplayArtwork = {
+    id: string;
+    title: string;
+    medium: string;
+    dimensions: string;
+    price: number;
+    imageUrl: string;
+  };
+
+  const handleInquire = (artwork: DisplayArtwork) => {
+    // Find the original artwork to set as selected
+    const originalArtwork = artworks.find(a => a.id === artwork.id);
+    if (originalArtwork) {
+      setSelectedArtwork(originalArtwork);
+    }
     setInquiryModalOpen(true);
   };
 
@@ -83,8 +75,20 @@ export default function ArtistProfile({ artistSettings }: ArtistProfileProps) {
     setInquiryModalOpen(true);
   };
 
-  const artistName = artistSettings?.display_name || "Hya";
+  const artistName = artistSettings?.display_name || "Artist";
   const artistBio = artistSettings?.artist_bio;
+
+  // Transform artworks for the grid
+  const displayArtworks = artworks.map(art => ({
+    id: art.id,
+    title: art.title,
+    medium: art.medium || "",
+    dimensions: art.dimensions || "",
+    price: art.price || 0,
+    imageUrl: art.image_url || "",
+  }));
+
+  const isEmpty = displayArtworks.length === 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -97,10 +101,36 @@ export default function ArtistProfile({ artistSettings }: ArtistProfileProps) {
 
       <main className="max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
         {activeSection === "works" && (
-          <ArtworkGrid 
-            artworks={PLACEHOLDER_ARTWORKS} 
-            onInquire={handleInquire}
-          />
+          isEmpty ? (
+            // Empty State
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-6">
+              <div className="space-y-3 max-w-md">
+                <h2 className="font-serif text-2xl text-neutral-900">
+                  {artistName} is currently curating their collection.
+                </h2>
+                <p className="text-neutral-500">
+                  Please check back soon for available works.
+                </p>
+              </div>
+              
+              {/* Show upload button only if owner is viewing their own empty profile */}
+              {isOwner && (
+                <Button
+                  onClick={() => navigate("/admin")}
+                  className="mt-6"
+                  size="lg"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload your first piece
+                </Button>
+              )}
+            </div>
+          ) : (
+            <ArtworkGrid 
+              artworks={displayArtworks} 
+              onInquire={handleInquire}
+            />
+          )
         )}
 
         {activeSection === "about" && (
@@ -113,9 +143,9 @@ export default function ArtistProfile({ artistSettings }: ArtistProfileProps) {
             ) : (
               <>
                 <p className="text-neutral-600 leading-relaxed text-lg">
-                  {artistName} is a contemporary mosaic artist whose work explores the intersection of 
-                  fragmentation and unity. Each piece is meticulously hand-cut and assembled, 
-                  transforming broken materials into cohesive visual narratives.
+                  {artistName} is a contemporary artist whose work explores the intersection of 
+                  fragmentation and unity. Each piece is meticulously crafted and assembled, 
+                  transforming materials into cohesive visual narratives.
                 </p>
                 <p className="text-neutral-600 leading-relaxed">
                   Based in the Pacific Northwest, {artistName} draws inspiration from natural patterns, 
@@ -149,7 +179,14 @@ export default function ArtistProfile({ artistSettings }: ArtistProfileProps) {
       <ProfileInquiryModal
         open={inquiryModalOpen}
         onOpenChange={setInquiryModalOpen}
-        artwork={selectedArtwork}
+        artwork={selectedArtwork ? {
+          id: selectedArtwork.id,
+          title: selectedArtwork.title,
+          medium: selectedArtwork.medium || "",
+          dimensions: selectedArtwork.dimensions || "",
+          price: selectedArtwork.price || 0,
+          imageUrl: selectedArtwork.image_url || "",
+        } : null}
       />
     </div>
   );

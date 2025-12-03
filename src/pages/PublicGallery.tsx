@@ -7,7 +7,8 @@ import { Loader2 } from "lucide-react";
 export default function PublicGallery() {
   const { handle } = useParams<{ handle: string }>();
 
-  const { data: artistSettings, isLoading, error } = useQuery({
+  // Fetch artist settings by handle
+  const { data: artistSettings, isLoading: settingsLoading, error: settingsError } = useQuery({
     queryKey: ["artist-by-handle", handle],
     queryFn: async () => {
       if (!handle) return null;
@@ -24,6 +25,27 @@ export default function PublicGallery() {
     enabled: !!handle,
   });
 
+  // Fetch artworks for the artist (only available ones for public)
+  const { data: artworks, isLoading: artworksLoading } = useQuery({
+    queryKey: ["public-artworks", artistSettings?.user_id],
+    queryFn: async () => {
+      if (!artistSettings?.user_id) return [];
+      
+      const { data, error } = await supabase
+        .from("artworks")
+        .select("id, title, medium, dimensions, price, image_url")
+        .eq("user_id", artistSettings.user_id)
+        .neq("status", "Sold")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!artistSettings?.user_id,
+  });
+
+  const isLoading = settingsLoading || (artistSettings && artworksLoading);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -32,10 +54,10 @@ export default function PublicGallery() {
     );
   }
 
-  if (error || !artistSettings) {
+  if (settingsError || !artistSettings) {
     return <Navigate to="/404" replace />;
   }
 
-  // Pass the artist settings to the profile page
-  return <ArtistProfile artistSettings={artistSettings} />;
+  // Pass the artist settings and artworks to the profile page
+  return <ArtistProfile artistSettings={artistSettings} artworks={artworks || []} />;
 }
