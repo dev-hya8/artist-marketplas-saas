@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Palette, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ArtistSignup() {
   const navigate = useNavigate();
@@ -279,7 +280,11 @@ export default function ArtistSignup() {
               <form onSubmit={handleClaimUrl} className="space-y-6">
                 <div className="space-y-3">
                   <Label htmlFor="handle">Choose your unique handle</Label>
-                  <div className="flex items-center gap-0 border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring">
+                  <div className={cn(
+                    "flex items-center gap-0 border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring transition-colors",
+                    handle.length >= 3 && !checkingHandle && !validateHandle(handle) && handleAvailable === true && "border-green-500 focus-within:ring-green-500",
+                    handle.length >= 3 && !checkingHandle && !validateHandle(handle) && handleAvailable === false && "border-destructive focus-within:ring-destructive"
+                  )}>
                     <span className="px-4 py-3 bg-muted text-muted-foreground text-sm whitespace-nowrap">
                       hyaandco.com/
                     </span>
@@ -292,7 +297,7 @@ export default function ArtistSignup() {
                       className="border-0 rounded-none focus-visible:ring-0 h-12"
                       required
                     />
-                    <div className="px-3">
+                    <div className="px-3 flex items-center justify-center w-10">
                       {checkingHandle && (
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       )}
@@ -304,20 +309,20 @@ export default function ArtistSignup() {
                       )}
                     </div>
                   </div>
-                  {handle.length > 0 && (
-                    <p className={`text-sm ${handleAvailable === true ? "text-green-500" : handleAvailable === false ? "text-destructive" : "text-muted-foreground"}`}>
-                      {checkingHandle ? "Checking availability..." : 
-                       handleAvailable === true ? "This handle is available!" :
-                       handleAvailable === false ? "This handle is taken" :
-                       validateHandle(handle) || "Enter a unique handle"}
-                    </p>
-                  )}
+                  <p className="text-sm min-h-[20px]">
+                    {handle.length === 0 ? null :
+                     validateHandle(handle) ? <span className="text-muted-foreground">{validateHandle(handle)}</span> :
+                     checkingHandle ? <span className="text-muted-foreground">Checking availability...</span> : 
+                     handleAvailable === true ? <span className="text-green-500">✅ hyaandco.com/{handle} is available!</span> :
+                     handleAvailable === false ? <span className="text-destructive">🚫 This handle is already claimed. Please try another.</span> :
+                     null}
+                  </p>
                 </div>
 
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-base" 
-                  disabled={loading || !handleAvailable}
+                  disabled={loading || !handleAvailable || checkingHandle}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Claim URL & Enter Dashboard
