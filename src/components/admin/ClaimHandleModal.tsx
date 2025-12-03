@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Check, X, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ClaimHandleModalProps {
   open: boolean;
@@ -50,8 +51,8 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
       return;
     }
 
+    setCheckingHandle(true);
     const timer = setTimeout(async () => {
-      setCheckingHandle(true);
       try {
         const { data, error } = await supabase.rpc("check_handle_available", {
           check_handle: handle.toLowerCase(),
@@ -108,6 +109,38 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
     }
   };
 
+  const getValidationMessage = () => {
+    if (handle.length === 0) return null;
+    
+    const formatError = validateHandle(handle);
+    if (formatError) {
+      return <span className="text-muted-foreground">{formatError}</span>;
+    }
+    
+    if (checkingHandle) {
+      return <span className="text-muted-foreground">Checking availability...</span>;
+    }
+    
+    if (handleAvailable === true) {
+      return <span className="text-green-500">✅ hyaandco.com/{handle} is available!</span>;
+    }
+    
+    if (handleAvailable === false) {
+      return <span className="text-destructive">🚫 This handle is already claimed. Please try another.</span>;
+    }
+    
+    return null;
+  };
+
+  const getInputBorderClass = () => {
+    if (handle.length < 3 || checkingHandle) return "";
+    const formatError = validateHandle(handle);
+    if (formatError) return "";
+    if (handleAvailable === true) return "border-green-500 focus-within:ring-green-500";
+    if (handleAvailable === false) return "border-destructive focus-within:ring-destructive";
+    return "";
+  };
+
   return (
     <Dialog open={open}>
       <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
@@ -126,7 +159,10 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div className="space-y-3">
             <Label htmlFor="handle">Your unique handle</Label>
-            <div className="flex items-center gap-0 border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring">
+            <div className={cn(
+              "flex items-center gap-0 border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring transition-colors",
+              getInputBorderClass()
+            )}>
               <span className="px-4 py-3 bg-muted text-muted-foreground text-sm whitespace-nowrap">
                 hyaandco.com/
               </span>
@@ -140,7 +176,7 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
                 autoFocus
                 required
               />
-              <div className="px-3">
+              <div className="px-3 flex items-center justify-center w-10">
                 {checkingHandle && (
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 )}
@@ -152,20 +188,15 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
                 )}
               </div>
             </div>
-            {handle.length > 0 && (
-              <p className={`text-sm ${handleAvailable === true ? "text-green-500" : handleAvailable === false ? "text-destructive" : "text-muted-foreground"}`}>
-                {checkingHandle ? "Checking availability..." : 
-                 handleAvailable === true ? "This handle is available!" :
-                 handleAvailable === false ? "This handle is taken" :
-                 validateHandle(handle) || "Enter a unique handle"}
-              </p>
-            )}
+            <p className="text-sm min-h-[20px]">
+              {getValidationMessage()}
+            </p>
           </div>
 
           <Button 
             type="submit" 
             className="w-full h-12" 
-            disabled={saving || !handleAvailable}
+            disabled={saving || !handleAvailable || checkingHandle}
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Claim URL & Continue
