@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Palette, Check, X } from "lucide-react";
+import { Loader2, Palette, Check, X, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Session } from "@supabase/supabase-js";
 
 export default function ArtistSignup() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"signup" | "claim">("signup");
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [step, setStep] = useState<"signup" | "confirm-email" | "claim">("signup");
+  const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [handle, setHandle] = useState("");
@@ -20,22 +23,30 @@ export default function ArtistSignup() {
   const [checkingHandle, setCheckingHandle] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // Check if they have a handle
-        checkUserHandle(session.user.id);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      setSession(currentSession);
+      
+      if (event === 'SIGNED_IN' && currentSession) {
+        // Defer the handle check to avoid deadlock
+        setTimeout(() => {
+          checkUserHandle(currentSession.user.id);
+        }, 0);
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setStep("claim");
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      setCheckingSession(false);
+      
+      if (existingSession) {
+        checkUserHandle(existingSession.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const checkUserHandle = async (userId: string) => {
     const { data } = await supabase
@@ -110,23 +121,33 @@ export default function ArtistSignup() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
+          emailRedirectTo: `${window.location.origin}/signup`,
           data: { full_name: "Artist" }
         }
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Account Created!",
-        description: "Now let's claim your unique gallery URL.",
-      });
-      
-      setStep("claim");
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        // Email confirmation required
+        setStep("confirm-email");
+        toast({
+          title: "Check your email!",
+          description: "We sent you a confirmation link. Click it to continue.",
+        });
+      } else if (data.session) {
+        // No email confirmation required, proceed to claim
+        toast({
+          title: "Account Created!",
+          description: "Now let's claim your unique gallery URL.",
+        });
+        setStep("claim");
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -141,11 +162,11 @@ export default function ArtistSignup() {
   const handleClaimUrl = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const error = validateHandle(handle);
-    if (error) {
+    const validationError = validateHandle(handle);
+    if (validationError) {
       toast({
         title: "Invalid Handle",
-        description: error,
+        description: validationError,
         variant: "destructive",
       });
       return;
@@ -160,24 +181,48 @@ export default function ArtistSignup() {
       return;
     }
 
+    // Strictly check session before proceeding
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    
+    if (!currentSession) {
+      toast({
+        title: "Session Expired",
+        description: "Your session has expired. Please sign in again.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "Session Error",
-          description: "Please sign in again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update artist_settings with the handle
-      const { error } = await supabase
+      // First check if artist_settings row exists
+      const { data: existingSettings } = await supabase
         .from("artist_settings")
-        .update({ handle: handle.toLowerCase() })
-        .eq("user_id", session.user.id);
+        .select("id")
+        .eq("user_id", currentSession.user.id)
+        .maybeSingle();
+
+      let error;
+      
+      if (existingSettings) {
+        // Update existing row
+        const result = await supabase
+          .from("artist_settings")
+          .update({ handle: handle.toLowerCase() })
+          .eq("user_id", currentSession.user.id);
+        error = result.error;
+      } else {
+        // Insert new row if trigger didn't create one
+        const result = await supabase
+          .from("artist_settings")
+          .insert({ 
+            user_id: currentSession.user.id,
+            handle: handle.toLowerCase(),
+            display_name: "Artist"
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -188,15 +233,25 @@ export default function ArtistSignup() {
       
       navigate("/admin");
     } catch (error: any) {
+      console.error("Claim handle error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to claim handle",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -207,7 +262,33 @@ export default function ArtistSignup() {
 
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {step === "signup" ? (
+          {step === "confirm-email" ? (
+            <div className="space-y-8">
+              <div className="text-center space-y-3">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-3xl font-bold tracking-tight">
+                  Check your email
+                </h2>
+                <p className="text-muted-foreground">
+                  We sent a confirmation link to <strong>{email}</strong>. 
+                  Click the link to verify your account and continue setting up your gallery.
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Didn't receive the email?{" "}
+                  <button 
+                    onClick={() => setStep("signup")}
+                    className="text-primary hover:underline"
+                  >
+                    Try again
+                  </button>
+                </p>
+              </div>
+            </div>
+          ) : step === "signup" ? (
             <div className="space-y-8">
               {/* Hero */}
               <div className="text-center space-y-3">
