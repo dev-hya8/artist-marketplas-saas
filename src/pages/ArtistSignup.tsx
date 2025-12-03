@@ -231,7 +231,7 @@ export default function ArtistSignup() {
         description: `Your gallery is live at hyaandco.com/${handle}`,
       });
       
-      navigate("/admin");
+      navigate("/gallery-ready");
     } catch (error: any) {
       console.error("Claim handle error:", error);
       toast({

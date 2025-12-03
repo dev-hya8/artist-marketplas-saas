@@ -21,6 +21,7 @@ const MyPurchases = lazy(() => import("./pages/MyPurchases"));
 const ArtistProfile = lazy(() => import("./pages/ArtistProfile"));
 const PublicGallery = lazy(() => import("./pages/PublicGallery"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const GalleryReady = lazy(() => import("./pages/GalleryReady"));
 
 // Create QueryClient instance
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
                   <Route path="/admin" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/signup" element={<ArtistSignup />} />
+                  <Route path="/gallery-ready" element={<GalleryReady />} />
                   <Route path="/history" element={<MyPurchases />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/cv" element={<CV />} />

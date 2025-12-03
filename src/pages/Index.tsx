@@ -183,12 +183,35 @@ const Index = () => {
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
           <div className="container mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
-                <h1 
-                  className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
-                  onClick={() => setActiveTab("artworks")}
-                >
-                  Artist Dashboard
-                </h1>
+                <div className="flex items-center gap-4">
+                  <h1 
+                    className="text-2xl font-bold cursor-pointer hover:opacity-70 transition-opacity" 
+                    onClick={() => setActiveTab("artworks")}
+                  >
+                    Artist Dashboard
+                  </h1>
+                  
+                  {/* Quick Gallery Link Widget */}
+                  {artistHandle && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hidden sm:flex items-center gap-2 h-8 px-3 text-xs font-medium bg-muted/50 hover:bg-muted"
+                          onClick={() => window.open(`${window.location.origin}/${artistHandle}`, "_blank")}
+                        >
+                          <Globe className="h-3.5 w-3.5 text-green-500" />
+                          <span className="text-muted-foreground">hyaandco.com/</span>
+                          <span className="font-semibold">{artistHandle}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>View your public gallery</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
                 
                 <div className="flex items-center gap-2">
                   {/* Currency Selector */}
