@@ -28,6 +28,8 @@ import { TransactionWizard } from "@/components/TransactionWizard";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 import { InquiriesTab, useUnreadInquiriesCount } from "@/components/admin/InquiriesTab";
 import { ArtistProfileDrawer } from "@/components/admin/ArtistProfileDrawer";
+import { ClaimHandleModal } from "@/components/admin/ClaimHandleModal";
+import { ShareGalleryCard } from "@/components/admin/ShareGalleryCard";
 import {
   Popover,
   PopoverContent,
@@ -54,6 +56,8 @@ const Index = () => {
   const [transactionWizardOpen, setTransactionWizardOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [artistHandle, setArtistHandle] = useState<string | null>(null);
+  const [showClaimModal, setShowClaimModal] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("artworks");
   const [viewMode, setViewMode] = useState<"table" | "gallery">("gallery");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -62,29 +66,39 @@ const Index = () => {
   const { data: unreadCount = 0 } = useUnreadInquiriesCount();
   const { currencyCode, setCurrency } = useCurrency();
 
-  // Fetch artist avatar
-  const fetchArtistAvatar = async () => {
+  // Fetch artist settings including handle
+  const fetchArtistSettings = async () => {
     try {
       const { data, error } = await supabase
         .from("artist_settings")
-        .select("avatar_url")
+        .select("avatar_url, handle")
         .maybeSingle();
 
       if (error) throw error;
       
       if (data) {
         setAvatarUrl(data.avatar_url);
+        setArtistHandle(data.handle);
+        // Show modal if no handle is set
+        if (!data.handle) {
+          setShowClaimModal(true);
+        }
       }
     } catch (error) {
-      console.error("Error fetching artist avatar:", error);
+      console.error("Error fetching artist settings:", error);
     }
+  };
+
+  const handleClaimSuccess = (handle: string) => {
+    setArtistHandle(handle);
+    setShowClaimModal(false);
   };
 
   const { data: artworks, isLoading, refetch } = useQuery({
     queryKey: ["artworks"],
     queryFn: async () => {
-      // Fetch avatar on component mount
-      fetchArtistAvatar();
+      // Fetch settings on component mount
+      fetchArtistSettings();
       
       const { data, error } = await supabase
         .from("artworks")
@@ -288,6 +302,11 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="artworks" className="space-y-6">
+            {/* Share Gallery Card - Show if handle exists */}
+            {artistHandle && (
+              <ShareGalleryCard handle={artistHandle} />
+            )}
+
             {/* Action Bar - Main Controls */}
             <div className="flex gap-2 items-center w-full">
               <Button 
@@ -566,6 +585,12 @@ const Index = () => {
           onClose={handleDrawerClose}
         />
       )}
+
+      {/* Claim Handle Modal - Show if no handle */}
+      <ClaimHandleModal
+        open={showClaimModal}
+        onSuccess={handleClaimSuccess}
+      />
     </div>
     </TooltipProvider>
   );

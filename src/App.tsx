@@ -15,8 +15,10 @@ const About = lazy(() => import("./pages/About"));
 const CV = lazy(() => import("./pages/CV"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Auth = lazy(() => import("./pages/Auth"));
+const ArtistSignup = lazy(() => import("./pages/ArtistSignup"));
 const MyPurchases = lazy(() => import("./pages/MyPurchases"));
 const ArtistProfile = lazy(() => import("./pages/ArtistProfile"));
+const PublicGallery = lazy(() => import("./pages/PublicGallery"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Create QueryClient instance
@@ -40,8 +42,11 @@ const App = () => (
                   <Route path="/dashboard" element={<Index />} />
                   <Route path="/admin" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/signup" element={<ArtistSignup />} />
                   <Route path="/history" element={<MyPurchases />} />
                   <Route path="/artist" element={<ArtistProfile />} />
+                  {/* Dynamic artist handle route - must be before catch-all */}
+                  <Route path="/:handle" element={<PublicGallery />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
