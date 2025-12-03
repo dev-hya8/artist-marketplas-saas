@@ -122,7 +122,7 @@ export default function GalleryReady() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(liveUrl, "_blank")}
+                  onClick={() => navigate(`/${handle}`)}
                   className="h-11 px-6"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
