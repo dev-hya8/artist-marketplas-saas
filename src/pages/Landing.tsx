@@ -10,7 +10,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="font-serif text-2xl tracking-tight text-foreground">
-              hya&co
+              Hya&Co
             </Link>
             <div className="flex items-center gap-4">
               <Link to="/auth">
@@ -107,7 +107,7 @@ export default function Landing() {
       <footer className="py-8 px-6 lg:px-12 border-t border-border">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} hya&co artists. All rights reserved.
+            © {new Date().getFullYear()} Hya&Co Artists. All rights reserved.
           </p>
         </div>
       </footer>

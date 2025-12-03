@@ -202,7 +202,7 @@ export default function ArtistSignup() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b py-4 px-6">
-        <h1 className="text-xl font-semibold tracking-tight">hya&co</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Hya&Co</h1>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
