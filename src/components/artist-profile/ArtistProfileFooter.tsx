@@ -8,7 +8,7 @@ export function ArtistProfileFooter() {
           to="/"
           className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors tracking-wide"
         >
-          Powered by hya&co artists
+          Powered by Hya&Co Artists
         </Link>
       </div>
     </footer>
