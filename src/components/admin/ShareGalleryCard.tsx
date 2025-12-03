@@ -26,7 +26,7 @@ export const ShareGalleryCard = ({ handle }: ShareGalleryCardProps) => {
   };
 
   const handleViewLive = () => {
-    window.open(liveUrl, "_blank", "noopener,noreferrer");
+    window.open(`${window.location.origin}/gallery`, "_blank", "noopener,noreferrer");
   };
 
   return (

@@ -122,7 +122,7 @@ export default function GalleryReady() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => navigate(`/artist/${handle}`)}
+                  onClick={() => navigate("/gallery")}
                   className="h-11 px-6"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
