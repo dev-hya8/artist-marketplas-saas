@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, User, MessageSquare, Settings, X, Globe, ChevronDown, DollarSign, List, Grid, Download } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -209,6 +210,9 @@ const Index = () => {
                       <p>Change Display Currency</p>
                     </TooltipContent>
                   </Tooltip>
+
+                  {/* Theme Toggle */}
+                  <ThemeToggle />
 
                   {/* Profile Avatar - Direct Navigation */}
                   <Tooltip>
