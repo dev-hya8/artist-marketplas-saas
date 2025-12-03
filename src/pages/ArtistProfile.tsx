@@ -57,7 +57,18 @@ const PLACEHOLDER_ARTWORKS = [
   },
 ];
 
-export default function ArtistProfile() {
+interface ArtistSettings {
+  display_name: string;
+  artist_bio?: string | null;
+  avatar_url?: string | null;
+  contact_email?: string | null;
+}
+
+interface ArtistProfileProps {
+  artistSettings?: ArtistSettings;
+}
+
+export default function ArtistProfile({ artistSettings }: ArtistProfileProps) {
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState<typeof PLACEHOLDER_ARTWORKS[0] | null>(null);
   const [activeSection, setActiveSection] = useState<"works" | "about" | "contact">("works");
@@ -72,10 +83,13 @@ export default function ArtistProfile() {
     setInquiryModalOpen(true);
   };
 
+  const artistName = artistSettings?.display_name || "Hya";
+  const artistBio = artistSettings?.artist_bio;
+
   return (
     <div className="min-h-screen bg-white">
       <ArtistProfileHeader 
-        artistName="Hya"
+        artistName={artistName}
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         onContactClick={handleContactClick}
@@ -92,16 +106,24 @@ export default function ArtistProfile() {
         {activeSection === "about" && (
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <h2 className="font-serif text-3xl text-neutral-900">About the Artist</h2>
-            <p className="text-neutral-600 leading-relaxed text-lg">
-              Hya is a contemporary mosaic artist whose work explores the intersection of 
-              fragmentation and unity. Each piece is meticulously hand-cut and assembled, 
-              transforming broken materials into cohesive visual narratives.
-            </p>
-            <p className="text-neutral-600 leading-relaxed">
-              Based in the Pacific Northwest, Hya draws inspiration from natural patterns, 
-              urban textures, and the Japanese philosophy of wabi-sabi—finding beauty in 
-              imperfection.
-            </p>
+            {artistBio ? (
+              <p className="text-neutral-600 leading-relaxed text-lg whitespace-pre-line">
+                {artistBio}
+              </p>
+            ) : (
+              <>
+                <p className="text-neutral-600 leading-relaxed text-lg">
+                  {artistName} is a contemporary mosaic artist whose work explores the intersection of 
+                  fragmentation and unity. Each piece is meticulously hand-cut and assembled, 
+                  transforming broken materials into cohesive visual narratives.
+                </p>
+                <p className="text-neutral-600 leading-relaxed">
+                  Based in the Pacific Northwest, {artistName} draws inspiration from natural patterns, 
+                  urban textures, and the Japanese philosophy of wabi-sabi—finding beauty in 
+                  imperfection.
+                </p>
+              </>
+            )}
           </div>
         )}
 

@@ -31,6 +31,7 @@ export type Database = {
           elevator_pitch: string | null
           email_alerts_enabled: boolean | null
           facebook_handle: string | null
+          handle: string | null
           id: string
           instagram_handle: string | null
           measurement_unit: string | null
@@ -63,6 +64,7 @@ export type Database = {
           elevator_pitch?: string | null
           email_alerts_enabled?: boolean | null
           facebook_handle?: string | null
+          handle?: string | null
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           elevator_pitch?: string | null
           email_alerts_enabled?: boolean | null
           facebook_handle?: string | null
+          handle?: string | null
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
@@ -502,6 +505,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_handle_available: {
+        Args: { check_handle: string }
+        Returns: boolean
+      }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       has_role: {
         Args: {
