@@ -16,7 +16,6 @@ const CV = lazy(() => import("./pages/CV"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Auth = lazy(() => import("./pages/Auth"));
 const MyPurchases = lazy(() => import("./pages/MyPurchases"));
-const ArtistProfile = lazy(() => import("./pages/ArtistProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Create QueryClient instance
@@ -40,7 +39,6 @@ const App = () => (
                   <Route path="/dashboard" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/history" element={<MyPurchases />} />
-                  <Route path="/artist" element={<ArtistProfile />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
