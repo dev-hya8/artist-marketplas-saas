@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, Lock } from "lucide-react";
+import { PaymentSettingsCard } from "./PaymentSettingsCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -226,6 +227,9 @@ export const SettingsTab = () => {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      {/* Payment Integration Section */}
+      <PaymentSettingsCard />
+
       {/* Appearance Section */}
       <Card>
         <CardHeader>

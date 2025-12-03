@@ -34,7 +34,10 @@ export type Database = {
           id: string
           instagram_handle: string | null
           measurement_unit: string | null
+          payment_instructions: string | null
+          payment_platform: string | null
           payment_terms: string | null
+          payment_url: string | null
           phone_number: string | null
           primary_contact_method: string | null
           public_profile_enabled: boolean | null
@@ -63,7 +66,10 @@ export type Database = {
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
+          payment_instructions?: string | null
+          payment_platform?: string | null
           payment_terms?: string | null
+          payment_url?: string | null
           phone_number?: string | null
           primary_contact_method?: string | null
           public_profile_enabled?: boolean | null
@@ -92,7 +98,10 @@ export type Database = {
           id?: string
           instagram_handle?: string | null
           measurement_unit?: string | null
+          payment_instructions?: string | null
+          payment_platform?: string | null
           payment_terms?: string | null
+          payment_url?: string | null
           phone_number?: string | null
           primary_contact_method?: string | null
           public_profile_enabled?: boolean | null
