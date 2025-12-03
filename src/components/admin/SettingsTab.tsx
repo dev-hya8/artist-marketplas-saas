@@ -32,7 +32,6 @@ import {
 
 export const SettingsTab = () => {
   const [loading, setLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
   const [publicProfileEnabled, setPublicProfileEnabled] = useState(true);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -42,18 +41,7 @@ export const SettingsTab = () => {
   });
   const navigate = useNavigate();
 
-  // Initialize dark mode from localStorage and fetch settings
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const isDark = savedTheme === "dark";
-    setIsDarkMode(isDark);
-    
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-
     fetchSettings();
   }, []);
 
@@ -93,21 +81,10 @@ export const SettingsTab = () => {
 
       if (error) throw error;
 
-      toast.success("Setting updated successfully");
+    toast.success("Setting updated successfully");
     } catch (error: any) {
       console.error("Error updating setting:", error);
       toast.error(error.message || "Failed to update setting");
-    }
-  };
-
-  const toggleDarkMode = (checked: boolean) => {
-    setIsDarkMode(checked);
-    localStorage.setItem("theme", checked ? "dark" : "light");
-    
-    if (checked) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
     }
   };
 
@@ -229,29 +206,6 @@ export const SettingsTab = () => {
     <div className="space-y-6 max-w-2xl mx-auto">
       {/* Payment Integration Section */}
       <PaymentSettingsCard />
-
-      {/* Appearance Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>Customize how the app looks to you</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="dark-mode">Dark Mode</Label>
-              <p className="text-sm text-muted-foreground">
-                Toggle between light and dark theme
-              </p>
-            </div>
-            <Switch
-              id="dark-mode"
-              checked={isDarkMode}
-              onCheckedChange={toggleDarkMode}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Security Section */}
       <Card>
