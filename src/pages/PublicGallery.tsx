@@ -1,11 +1,15 @@
-import { useParams, Navigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import ArtistProfile from "./ArtistProfile";
+import NotFound from "./NotFound";
 import { Loader2 } from "lucide-react";
 
 export default function PublicGallery() {
   const { handle } = useParams<{ handle: string }>();
+
+  // Debug log
+  console.log("Public Profile Loaded for:", handle);
 
   // Fetch artist settings by handle
   const { data: artistSettings, isLoading: settingsLoading, error: settingsError } = useQuery({
@@ -54,8 +58,9 @@ export default function PublicGallery() {
     );
   }
 
+  // Render NotFound directly instead of navigating to /404
   if (settingsError || !artistSettings) {
-    return <Navigate to="/404" replace />;
+    return <NotFound />;
   }
 
   // Pass the artist settings and artworks to the profile page
