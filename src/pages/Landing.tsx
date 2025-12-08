@@ -23,18 +23,19 @@ export default function Landing() {
             The Operating System for Independent Artists
           </h1>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Launch your professional art gallery in minutes. Showcase your work, sell directly to collectors, and own your creative business.
+            Launch your independent professional art gallery in minutes. Showcase your work, sell directly to
+            collectors, and own your creative business.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/signup">
               <Button size="lg" className="text-lg px-8 py-6">
-                Start Your Gallery
+                Launch Your Independent Gallery
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link to="/auth">
               <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                Login to Dashboard
+                Login
               </Button>
             </Link>
           </div>
@@ -75,9 +76,7 @@ export default function Landing() {
       {/* CTA Section */}
       <section className="py-20 px-6 lg:px-12">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="font-serif text-3xl md:text-4xl text-foreground mb-6">
-            Ready to launch your art career?
-          </h2>
+          <h2 className="font-serif text-3xl md:text-4xl text-foreground mb-6">Ready to launch your art career?</h2>
           <p className="text-lg text-muted-foreground mb-8">
             Join independent artists who are taking control of their creative business.
           </p>
