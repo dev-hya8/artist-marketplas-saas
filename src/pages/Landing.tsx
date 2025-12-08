@@ -8,23 +8,10 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-center h-16">
             <Link to="/" className="font-serif text-2xl tracking-tight text-foreground">
               Hya&Co
             </Link>
-            <div className="flex items-center gap-4">
-              <Link to="/auth">
-                <Button variant="ghost" size="sm">
-                  Login
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </nav>
