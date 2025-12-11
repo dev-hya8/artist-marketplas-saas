@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     // Extract JWT token from Authorization header
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.error('No authorization header provided')
       return new Response(
         JSON.stringify({ error: 'Unauthorized - No token provided' }),
@@ -25,18 +25,16 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Initialize Supabase client with the user's JWT token
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    })
+    const token = authHeader.replace('Bearer ', '')
 
-    // Verify the user's session
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Verify the JWT and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
       console.error('Authentication failed:', authError)
