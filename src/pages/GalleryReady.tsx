@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -73,7 +73,14 @@ export default function GalleryReady() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b py-4 px-6">
-        <h1 className="text-xl font-semibold tracking-tight">Artha</h1>
+        <div className="flex items-center justify-center">
+          <Link 
+            to="/" 
+            className="font-serif text-2xl tracking-tight text-foreground transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-2 py-1"
+          >
+            Artha
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">

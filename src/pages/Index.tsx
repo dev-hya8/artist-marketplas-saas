@@ -418,57 +418,59 @@ const Index = () => {
               viewMode === "table" ? (
                 <>
                   <div className="border border-border rounded-lg overflow-hidden bg-background">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="font-bold text-base h-14">Title</TableHead>
-                          <TableHead className="font-bold text-base h-14">Price</TableHead>
-                          <TableHead className="font-bold text-base h-14">Status</TableHead>
-                          <TableHead className="font-bold text-base h-14">Date Listed</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredArtworks.map((artwork) => (
-                          <TableRow 
-                            key={artwork.id}
-                            className="cursor-pointer hover:bg-muted/50 transition-colors h-16"
-                            onClick={() => handleCardClick(artwork)}
-                          >
-                            <TableCell className="font-medium text-base">{artwork.title}</TableCell>
-                            <TableCell className="text-base">
-                              {artwork.price 
-                                ? `${CURRENCIES.find(c => c.code === currencyCode)?.symbol}${artwork.price.toLocaleString()}` 
-                                : "N/A"}
-                            </TableCell>
-                            <TableCell>
-                              {artwork.status === "Available" && (
-                                <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
-                                  <span className="mr-1.5">●</span> Available
-                                </Badge>
-                              )}
-                              {artwork.status === "Sold" && (
-                                <Badge variant="destructive">
-                                  <span className="mr-1.5">●</span> Sold
-                                </Badge>
-                              )}
-                              {artwork.status === "On Loan" && (
-                                <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                                  <span className="mr-1.5">●</span> On Loan {artwork.location && `at ${artwork.location}`}
-                                </Badge>
-                              )}
-                              {artwork.status === "Reserved" && (
-                                <Badge variant="secondary">
-                                  <span className="mr-1.5">●</span> Reserved
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-base text-muted-foreground">
-                              {artwork.created_at ? format(new Date(artwork.created_at), "dd MMM yyyy") : "N/A"}
-                            </TableCell>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
+                            <TableHead className="font-bold text-base h-14">Title</TableHead>
+                            <TableHead className="font-bold text-base h-14">Price</TableHead>
+                            <TableHead className="font-bold text-base h-14">Status</TableHead>
+                            <TableHead className="font-bold text-base h-14">Date Listed</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredArtworks.map((artwork) => (
+                            <TableRow 
+                              key={artwork.id}
+                              className="cursor-pointer hover:bg-muted/50 transition-colors h-16"
+                              onClick={() => handleCardClick(artwork)}
+                            >
+                              <TableCell className="font-medium text-base">{artwork.title}</TableCell>
+                              <TableCell className="text-base">
+                                {artwork.price 
+                                  ? `${CURRENCIES.find(c => c.code === currencyCode)?.symbol}${artwork.price.toLocaleString()}` 
+                                  : "N/A"}
+                              </TableCell>
+                              <TableCell>
+                                {artwork.status === "Available" && (
+                                  <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">
+                                    <span className="mr-1.5">●</span> Available
+                                  </Badge>
+                                )}
+                                {artwork.status === "Sold" && (
+                                  <Badge variant="destructive">
+                                    <span className="mr-1.5">●</span> Sold
+                                  </Badge>
+                                )}
+                                {artwork.status === "On Loan" && (
+                                  <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                                    <span className="mr-1.5">●</span> On Loan {artwork.location && `at ${artwork.location}`}
+                                  </Badge>
+                                )}
+                                {artwork.status === "Reserved" && (
+                                  <Badge variant="secondary">
+                                    <span className="mr-1.5">●</span> Reserved
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-base text-muted-foreground">
+                                {artwork.created_at ? format(new Date(artwork.created_at), "dd MMM yyyy") : "N/A"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                   
                   {/* Export Button - Below the table */}

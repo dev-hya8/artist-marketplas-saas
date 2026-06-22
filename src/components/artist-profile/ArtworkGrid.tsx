@@ -47,9 +47,10 @@ function ArtworkCard({
 
   return (
     <div 
-      className="break-inside-avoid group"
+      className="break-inside-avoid group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={onInquire}
     >
       {/* Image Container */}
       <div className="relative overflow-hidden bg-neutral-100">

@@ -11,10 +11,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ShoppingCart } from "lucide-react";
+import { ChevronDown, ShoppingCart, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CartDrawer } from "@/components/CartDrawer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export const Navbar = () => {
   const { settings, loading } = useArtistSettings();
@@ -65,6 +70,7 @@ export const Navbar = () => {
           
           {/* Center/Right: Navigation Links */}
           <div className="flex items-center gap-6 ml-auto">
+            {/* Desktop Navigation */}
             <div className="hidden md:flex gap-8">
               <Link to="/" className="text-sm font-light tracking-wide hover:opacity-70 transition-opacity">
                 Works
@@ -75,6 +81,42 @@ export const Navbar = () => {
               <Link to="/contact" className="text-sm font-light tracking-wide hover:opacity-70 transition-opacity">
                 Contact
               </Link>
+            </div>
+
+            {/* Mobile Hamburger Navigation */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Open Navigation Menu">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px] bg-background border-l border-border p-6 flex flex-col justify-between z-[150]">
+                  <div className="flex flex-col gap-6 pt-10">
+                    <Link 
+                      to="/" 
+                      className="text-lg font-light tracking-wide hover:opacity-70 transition-opacity border-b border-border/40 pb-3"
+                    >
+                      Works
+                    </Link>
+                    <Link 
+                      to="/about" 
+                      className="text-lg font-light tracking-wide hover:opacity-70 transition-opacity border-b border-border/40 pb-3"
+                    >
+                      About
+                    </Link>
+                    <Link 
+                      to="/contact" 
+                      className="text-lg font-light tracking-wide hover:opacity-70 transition-opacity border-b border-border/40 pb-3"
+                    >
+                      Contact
+                    </Link>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    © {new Date().getFullYear()} Artha
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
             
             {/* Far Right: Currency + Theme Toggle + Cart */}

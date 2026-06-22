@@ -99,11 +99,11 @@ export const StudioGallery = () => {
               const optimizedUrl = getOptimizedImageUrl(photo.image_url, 600);
               const isLoaded = loadedImages.has(photo.id);
               
-              // Randomly vary grid cell spans for masonry effect
+              // Randomly vary grid cell spans for masonry effect (on screens larger than mobile)
               const spanClass = index % 5 === 0 
-                ? 'row-span-2' 
+                ? 'sm:row-span-2' 
                 : index % 7 === 0 
-                  ? 'col-span-2' 
+                  ? 'sm:col-span-2' 
                   : '';
 
               return (

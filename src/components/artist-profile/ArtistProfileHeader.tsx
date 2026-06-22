@@ -26,13 +26,13 @@ export function ArtistProfileHeader({
           {/* Artist Name - Elegant Serif */}
           <button 
             onClick={() => onSectionChange("works")}
-            className="font-serif text-3xl tracking-tight text-neutral-900 hover:text-neutral-700 transition-colors"
+            className="font-serif text-xl sm:text-3xl tracking-tight text-neutral-900 hover:text-neutral-700 transition-colors"
           >
             {artistName}
           </button>
 
           {/* Navigation */}
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-3 sm:gap-8">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -44,7 +44,7 @@ export function ArtistProfileHeader({
                   }
                 }}
                 className={cn(
-                  "text-sm tracking-wide uppercase transition-colors",
+                  "text-xs sm:text-sm tracking-wide uppercase transition-colors",
                   activeSection === item.id
                     ? "text-neutral-900"
                     : "text-neutral-500 hover:text-neutral-900"
