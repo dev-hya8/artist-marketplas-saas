@@ -202,7 +202,7 @@ const Index = () => {
                           onClick={() => window.open(`${window.location.origin}/${artistHandle}`, "_blank")}
                         >
                           <Globe className="h-3.5 w-3.5 text-green-500" />
-                          <span className="text-muted-foreground">hyaandco.com/</span>
+                          <span className="text-muted-foreground">artha.co/</span>
                           <span className="font-semibold">{artistHandle}</span>
                         </Button>
                       </TooltipTrigger>

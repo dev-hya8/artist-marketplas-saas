@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 import {
   Drawer,
   DrawerClose,
@@ -19,11 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { Trash2, Crop } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
+import { useArtworkForm } from "@/hooks/useArtworkForm";
 import type { Database } from "@/integrations/supabase/types";
 
 type ArtworkStatus = Database["public"]["Enums"]["artwork_status"];
@@ -39,275 +38,46 @@ export const AddArtworkDrawer = ({
   onOpenChange,
   onSuccess,
 }: AddArtworkDrawerProps) => {
-  const { toast } = useToast();
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
-  const [distinctLocations, setDistinctLocations] = useState<string[]>([]);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    image_url: "",
-    creation_year: "",
-    medium: "",
-    dimensions: "",
-    dimension_unit: "in",
-    depth: "",
-    status: "Available" as ArtworkStatus,
-    price: "",
-    base_currency: "USD",
-    location: "",
-    provenance_log: "",
+
+  const {
+    formData,
+    setFormData,
+    loading,
+    uploading,
+    imagePreview,
+    distinctMedia,
+    distinctLocations,
+    cropperOpen,
+    setCropperOpen,
+    tempImageUrl,
+    setTempImageUrl,
+    errors,
+    dimensionUnitWarning,
+    fetchDefaultUnit,
+    fetchAutocompleteData,
+    handleFileUpload,
+    handleCropComplete,
+    handleRecrop,
+    handleRemoveImage,
+    handleCreate,
+    handleDimensionsChange,
+  } = useArtworkForm({
+    onSuccess,
+    onClose: () => onOpenChange(false),
   });
 
-  // Fetch default unit and autocomplete data
+  // Fetch autocompletes and settings when opened
   useEffect(() => {
-    fetchDefaultUnit();
-    fetchAutocompleteData();
+    if (open) {
+      fetchDefaultUnit();
+      fetchAutocompleteData();
+    }
   }, [open]);
 
-  const fetchDefaultUnit = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("artist_settings")
-        .select("measurement_unit")
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (data && data.measurement_unit) {
-        setFormData(prev => ({ ...prev, dimension_unit: data.measurement_unit }));
-      }
-    } catch (error) {
-      console.error("Error fetching default unit:", error);
-    }
-  };
-
-  const fetchAutocompleteData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("artworks")
-        .select("medium, location");
-
-      if (error) throw error;
-      
-      if (data) {
-        const media = [...new Set(data.map(item => item.medium).filter(Boolean))] as string[];
-        const locations = [...new Set(data.map(item => item.location).filter(Boolean))] as string[];
-        setDistinctMedia(media);
-        setDistinctLocations(locations);
-      }
-    } catch (error) {
-      console.error("Error fetching autocomplete data:", error);
-    }
-  };
-  const [errors, setErrors] = useState({
-    image_url: false,
-    dimensions: false,
-    medium: false,
-  });
-  const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
-
-  // Function to check if dimensions contain unit keywords
-  const checkForUnits = (text: string): boolean => {
-    const unitKeywords = /\b(in|inch|inches|cm|ft|feet)\b/i;
-    return unitKeywords.test(text);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      e.target.value = ""; // Reset file input
-      return;
-    }
-
-    // Create preview URL and open cropper
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setTempImageUrl(reader.result as string);
-      setCropperOpen(true);
-    };
-    reader.readAsDataURL(file);
-
-    e.target.value = ""; // Reset file input
-  };
-
-  const handleCropComplete = async (croppedBlob: Blob) => {
-    console.log("handleCropComplete called with blob:", croppedBlob.size, "bytes");
-    setCroppedBlob(croppedBlob);
-    
-    // Create preview URL for the cropped image
-    const previewUrl = URL.createObjectURL(croppedBlob);
-    setImagePreview(previewUrl);
-
-    // Upload the cropped image directly without compression
-    setUploading(true);
-    try {
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
-      const filePath = fileName;
-
-      console.log("📤 Uploading file:", fileName);
-
-      const { error: uploadError } = await supabase.storage
-        .from('artwork_images')
-        .upload(filePath, croppedBlob);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('artwork_images')
-        .getPublicUrl(filePath);
-      
-      console.log("Setting image URL:", publicUrl);
-      setFormData({ ...formData, image_url: publicUrl });
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error("Image upload error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload image",
-        variant: "destructive",
-      });
-      setImagePreview(null);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleRecrop = () => {
-    if (imagePreview) {
-      setTempImageUrl(imagePreview);
-      setCropperOpen(true);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    setFormData({ ...formData, image_url: "" });
-    // Note: We don't need to clear the file input value imperatively here 
-    // as the preview state controls the UI
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('Form values on submit:', formData);
-    
-    if (uploading) {
-      toast({
-        title: "Please wait",
-        description: "Image is still uploading",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate required fields
-    const newErrors = {
-      image_url: !formData.image_url,
-      dimensions: !formData.dimensions,
-      medium: !formData.medium,
-    };
-
-    setErrors(newErrors);
-
-    // Check if any errors exist
-    if (Object.values(newErrors).some(error => error)) {
-      const errorMessages = [];
-      if (newErrors.image_url) errorMessages.push("Image is required");
-      if (newErrors.dimensions) errorMessages.push("Dimensions are required");
-      if (newErrors.medium) errorMessages.push("Medium is required");
-      
-      const errorMessage = errorMessages.join("\n");
-      window.alert("Validation Failed:\n\n" + errorMessage);
-      
-      toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields before submitting",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.from("artworks").insert({
-        title: formData.title,
-        image_url: formData.image_url || null,
-        creation_year: formData.creation_year ? parseInt(formData.creation_year) : null,
-        medium: formData.medium || null,
-        dimensions: formData.dimensions || null,
-        dimension_unit: formData.dimension_unit,
-        depth: formData.depth ? parseFloat(formData.depth) : null,
-        status: formData.status,
-        price: formData.price ? parseFloat(formData.price) : null,
-        base_currency: formData.base_currency,
-        location: formData.location || null,
-        provenance_log: formData.provenance_log || null,
-      });
-
-      if (error) {
-        console.error('Supabase insert error:', error);
-        window.alert("Database Error:\n\n" + JSON.stringify(error, null, 2));
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Artwork added successfully",
-      });
-      
-      setFormData({
-        title: "",
-        image_url: "",
-        creation_year: "",
-        medium: "",
-        dimensions: "",
-        dimension_unit: "in",
-        depth: "",
-        status: "Available",
-        price: "",
-        base_currency: "USD",
-        location: "",
-        provenance_log: "",
-      });
-      setImagePreview(null);
-      setErrors({
-        image_url: false,
-        dimensions: false,
-        medium: false,
-      });
-      
-      onSuccess();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error("Artwork submission error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add artwork",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    handleCreate();
   };
 
   return (
@@ -396,10 +166,7 @@ export const AddArtworkDrawer = ({
                 list="medium-suggestions"
                 placeholder="e.g., Oil on canvas"
                 value={formData.medium}
-                onChange={(e) => {
-                  setFormData({ ...formData, medium: e.target.value });
-                  setErrors({ ...errors, medium: false });
-                }}
+                onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
                 className={errors.medium ? "border-destructive" : ""}
               />
               <datalist id="medium-suggestions">
@@ -419,12 +186,7 @@ export const AddArtworkDrawer = ({
                   id="dimensions"
                   placeholder="e.g. 24 x 36 (Enter numbers only)"
                   value={formData.dimensions}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, dimensions: value });
-                    setErrors({ ...errors, dimensions: false });
-                    setDimensionUnitWarning(checkForUnits(value));
-                  }}
+                  onChange={(e) => handleDimensionsChange(e.target.value)}
                   className={`flex-1 ${errors.dimensions ? "border-destructive" : ""}`}
                 />
                 <Select
@@ -471,21 +233,21 @@ export const AddArtworkDrawer = ({
             
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Available">Available</SelectItem>
-                <SelectItem value="Sold">Sold</SelectItem>
-                <SelectItem value="On Loan">On Loan</SelectItem>
-                <SelectItem value="Reserved">Reserved</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value as ArtworkStatus })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Sold">Sold</SelectItem>
+                  <SelectItem value="On Loan">On Loan</SelectItem>
+                  <SelectItem value="Reserved">Reserved</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="price">Price</Label>
@@ -497,38 +259,17 @@ export const AddArtworkDrawer = ({
                   min="0"
                   placeholder="0"
                   value={formData.price}
-                  onKeyDown={(e) => {
-                    if (e.key === '.' || e.key === ',') {
-                      e.preventDefault();
-                      toast({
-                        title: "Whole numbers only",
-                        description: "Please enter an integer value without decimals",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || /^\d+$/.test(value)) {
-                      setFormData({ ...formData, price: value });
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (value && value.includes('.')) {
-                      const rounded = Math.round(parseFloat(value)).toString();
-                      setFormData({ ...formData, price: rounded });
-                      toast({
-                        title: "Value rounded",
-                        description: "Decimal values are not allowed. The price has been rounded to the nearest whole number.",
-                      });
+                    const val = e.target.value;
+                    if (val === "" || /^\d+$/.test(val)) {
+                      setFormData({ ...formData, price: val });
                     }
                   }}
                   className="flex-1"
                   style={{
-                    appearance: 'textfield',
-                    MozAppearance: 'textfield',
-                    WebkitAppearance: 'none'
+                    appearance: "textfield",
+                    MozAppearance: "textfield",
+                    WebkitAppearance: "none",
                   }}
                 />
                 <Select

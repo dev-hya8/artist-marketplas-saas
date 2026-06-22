@@ -167,7 +167,7 @@ export const PaymentSettingsCard = () => {
         </div>
         <CardDescription className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-green-500" />
-          Connect your personal payment accounts. You receive 100% of the sale directly. Hya&co does not touch your funds.
+          Connect your personal payment accounts. You receive 100% of the sale directly. Artha does not touch your funds.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

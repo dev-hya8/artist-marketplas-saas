@@ -228,7 +228,7 @@ export default function ArtistSignup() {
 
       toast({
         title: "Success!",
-        description: `Your gallery is live at hyaandco.com/${handle}`,
+        description: `Your gallery is live at artha.co/${handle}`,
       });
       
       navigate("/gallery-ready");
@@ -257,7 +257,7 @@ export default function ArtistSignup() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b py-4 px-6">
-        <h1 className="text-xl font-semibold tracking-tight">Hya&Co</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Artha</h1>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
@@ -367,7 +367,7 @@ export default function ArtistSignup() {
                     handle.length >= 3 && !checkingHandle && !validateHandle(handle) && handleAvailable === false && "border-destructive focus-within:ring-destructive"
                   )}>
                     <span className="px-4 py-3 bg-muted text-muted-foreground text-sm whitespace-nowrap">
-                      hyaandco.com/
+                      artha.co/
                     </span>
                     <Input
                       id="handle"
@@ -394,7 +394,7 @@ export default function ArtistSignup() {
                     {handle.length === 0 ? null :
                      validateHandle(handle) ? <span className="text-muted-foreground">{validateHandle(handle)}</span> :
                      checkingHandle ? <span className="text-muted-foreground">Checking availability...</span> : 
-                     handleAvailable === true ? <span className="text-green-500">✅ hyaandco.com/{handle} is available!</span> :
+                     handleAvailable === true ? <span className="text-green-500">✅ artha.co/{handle} is available!</span> :
                      handleAvailable === false ? <span className="text-destructive">🚫 This handle is already claimed. Please try another.</span> :
                      null}
                   </p>

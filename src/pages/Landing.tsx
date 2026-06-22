@@ -4,34 +4,20 @@ import { ArrowRight, Palette, Globe, CreditCard, BarChart3 } from "lucide-react"
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth bg-background">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-center h-16">
             <Link to="/" className="font-serif text-2xl tracking-tight text-foreground">
-              Hya&Co
+              Artha
             </Link>
-            <div className="flex items-center gap-6">
-              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Home
-              </Link>
-              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                About Us
-              </Link>
-              <Link to="/services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Services
-              </Link>
-              <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Contact
-              </Link>
-            </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6 lg:px-12">
+      <section className="min-h-screen flex items-center justify-center pt-16 px-6 lg:px-12 snap-start">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl tracking-tight text-foreground mb-6">
             The Operating System for Independent Artists
@@ -57,7 +43,7 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6 lg:px-12 bg-muted/30">
+      <section className="min-h-screen flex items-center justify-center py-20 px-6 lg:px-12 bg-muted/30 snap-start">
         <div className="max-w-6xl mx-auto">
           <h2 className="font-serif text-3xl md:text-4xl text-center text-foreground mb-16">
             Everything you need to run your art business
@@ -66,7 +52,7 @@ export default function Landing() {
             <FeatureCard
               icon={<Globe className="h-8 w-8" />}
               title="Your Own URL"
-              description="Get a beautiful gallery at hyaandco.com/yourname"
+              description="Get a beautiful gallery at artha.co/yourname"
             />
             <FeatureCard
               icon={<Palette className="h-8 w-8" />}
@@ -88,29 +74,29 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 lg:px-12">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="min-h-screen flex flex-col justify-between pt-32 pb-8 px-6 lg:px-12 snap-start">
+        <div className="max-w-3xl mx-auto text-center flex-1 flex flex-col justify-center">
           <h2 className="font-serif text-3xl md:text-4xl text-foreground mb-6">Ready to launch your art career?</h2>
           <p className="text-lg text-muted-foreground mb-8">
             Join independent artists who are taking control of their creative business.
           </p>
-          <Link to="/signup">
-            <Button size="lg" className="text-lg px-8 py-6">
-              Create Your Gallery
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          <div className="flex justify-center">
+            <Link to="/signup">
+              <Button size="lg" className="text-lg px-8 py-6">
+                Create Your Gallery
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="py-8 px-6 lg:px-12 border-t border-border">
-        <div className="max-w-7xl mx-auto text-center">
+        {/* Footer */}
+        <footer className="w-full text-center border-t border-border pt-8 mt-auto">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Hya&Co Artists. All rights reserved.
+            © {new Date().getFullYear()} Artha Artists. All rights reserved.
           </p>
-        </div>
-      </footer>
+        </footer>
+      </section>
     </div>
   );
 }

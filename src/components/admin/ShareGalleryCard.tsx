@@ -11,7 +11,7 @@ interface ShareGalleryCardProps {
 export const ShareGalleryCard = ({ handle }: ShareGalleryCardProps) => {
   const [copied, setCopied] = useState(false);
   
-  const fullUrl = `hyaandco.com/artist/${handle}`;
+  const fullUrl = `artha.co/artist/${handle}`;
   const liveUrl = `${window.location.origin}/artist/${handle}`;
 
   const handleCopy = async () => {

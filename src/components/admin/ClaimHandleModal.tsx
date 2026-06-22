@@ -100,7 +100,7 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
 
       if (error) throw error;
 
-      toast.success(`Your gallery is live at hyaandco.com/${handle}`);
+      toast.success(`Your gallery is live at artha.co/${handle}`);
       onSuccess(handle.toLowerCase());
     } catch (error: any) {
       toast.error(error.message || "Failed to claim handle");
@@ -122,7 +122,7 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
     }
     
     if (handleAvailable === true) {
-      return <span className="text-green-500">✅ hyaandco.com/{handle} is available!</span>;
+      return <span className="text-green-500">✅ artha.co/{handle} is available!</span>;
     }
     
     if (handleAvailable === false) {
@@ -164,7 +164,7 @@ export const ClaimHandleModal = ({ open, onSuccess }: ClaimHandleModalProps) => 
               getInputBorderClass()
             )}>
               <span className="px-4 py-3 bg-muted text-muted-foreground text-sm whitespace-nowrap">
-                hyaandco.com/
+                artha.co/
               </span>
               <Input
                 id="handle"

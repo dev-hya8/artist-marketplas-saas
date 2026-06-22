@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Drawer,
   DrawerClose,
@@ -30,11 +29,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
 import { Trash2, Upload, Crop, X } from "lucide-react";
 import { GalleryManager } from "@/components/admin/GalleryManager";
 import { ImageCropperDialog } from "@/components/ImageCropperDialog";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { useArtworkForm } from "@/hooks/useArtworkForm";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Artwork = Tables<"artworks">;
@@ -55,287 +54,50 @@ export const EditArtworkDrawer = ({
   onSuccess,
   onClose,
 }: EditArtworkDrawerProps) => {
-  const { toast } = useToast();
   const { convertPrice, currencyCode, isRateFailed } = useCurrency();
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
-  const [dimensionUnitWarning, setDimensionUnitWarning] = useState(false);
   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
-  const [distinctMedia, setDistinctMedia] = useState<string[]>([]);
-  const [distinctLocations, setDistinctLocations] = useState<string[]>([]);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
-  
-  // Function to check if dimensions contain unit keywords
-  const checkForUnits = (text: string): boolean => {
-    const unitKeywords = /\b(in|inch|inches|cm|ft|feet)\b/i;
-    return unitKeywords.test(text);
-  };
-  
-  const [formData, setFormData] = useState({
-    title: artwork.title,
-    image_url: artwork.image_url || "",
-    creation_year: artwork.creation_year?.toString() || "",
-    medium: artwork.medium || "",
-    dimensions: artwork.dimensions || "",
-    dimension_unit: artwork.dimension_unit || "in",
-    depth: artwork.depth?.toString() || "",
-    status: artwork.status,
-    price: artwork.price?.toString() || "",
-    base_currency: artwork.base_currency || "USD",
-    location: artwork.location || "",
-    provenance_log: artwork.provenance_log || "",
+
+  const {
+    formData,
+    setFormData,
+    loading,
+    uploading,
+    imagePreview,
+    distinctMedia,
+    distinctLocations,
+    cropperOpen,
+    setCropperOpen,
+    tempImageUrl,
+    setTempImageUrl,
+    errors,
+    dimensionUnitWarning,
+    fetchAutocompleteData,
+    handleFileUpload,
+    handleCropComplete,
+    handleRecrop,
+    handleRemoveImage,
+    handleUpdate,
+    handleDelete,
+    hasChanges: hookHasChanges,
+    handleDimensionsChange,
+  } = useArtworkForm({
+    artwork,
+    onSuccess,
+    onClose,
   });
 
+  // Fetch autocompletes when the drawer opens or the artwork changes
   useEffect(() => {
-    setFormData({
-      title: artwork.title,
-      image_url: artwork.image_url || "",
-      creation_year: artwork.creation_year?.toString() || "",
-      medium: artwork.medium || "",
-      dimensions: artwork.dimensions || "",
-      dimension_unit: artwork.dimension_unit || "in",
-      depth: artwork.depth?.toString() || "",
-      status: artwork.status,
-      price: artwork.price?.toString() || "",
-      base_currency: artwork.base_currency || "USD",
-      location: artwork.location || "",
-      provenance_log: artwork.provenance_log || "",
-    });
-    setGalleryHasChanges(false);
-    fetchAutocompleteData();
-  }, [artwork.id]);
-
-  const fetchAutocompleteData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("artworks")
-        .select("medium, location");
-
-      if (error) throw error;
-      
-      if (data) {
-        const media = [...new Set(data.map(item => item.medium).filter(Boolean))] as string[];
-        const locations = [...new Set(data.map(item => item.location).filter(Boolean))] as string[];
-        setDistinctMedia(media);
-        setDistinctLocations(locations);
-      }
-    } catch (error) {
-      console.error("Error fetching autocomplete data:", error);
+    if (open) {
+      fetchAutocompleteData();
+      setGalleryHasChanges(false);
     }
-  };
+  }, [open, artwork.id]);
 
-  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const hasChanges = hookHasChanges || galleryHasChanges;
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      e.target.value = "";
-      return;
-    }
-
-    // Create preview URL and open cropper
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setTempImageUrl(reader.result as string);
-      setCropperOpen(true);
-    };
-    reader.readAsDataURL(file);
-
-    e.target.value = ""; // Reset file input
-  };
-
-  const handleCropComplete = async (croppedBlob: Blob) => {
-    console.log("handleCropComplete called with blob:", croppedBlob.size, "bytes");
-    setCroppedBlob(croppedBlob);
-    setUploading(true);
-
-    try {
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
-      const filePath = fileName;
-
-      console.log("📤 Uploading file:", fileName);
-
-      const { error: uploadError } = await supabase.storage
-        .from('artwork_images')
-        .upload(filePath, croppedBlob);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('artwork_images')
-        .getPublicUrl(filePath);
-
-      // Attempt to delete old image if replacing
-      if (artwork.image_url) {
-        try {
-          const urlParts = artwork.image_url.split('/');
-          const oldFileName = urlParts[urlParts.length - 1].split('?')[0]; // Remove any query params
-          
-          const { error: deleteError } = await supabase.storage
-            .from('artwork_images')
-            .remove([oldFileName]);
-
-          if (deleteError) {
-            console.warn("Could not delete old image:", deleteError);
-          }
-        } catch (deleteError) {
-          console.warn("Error deleting old image:", deleteError);
-        }
-      }
-      
-      console.log("Setting image URL:", publicUrl);
-      setFormData({ ...formData, image_url: publicUrl });
-      
-      toast({
-        title: "Success",
-        description: "Thumbnail updated successfully",
-      });
-    } catch (error: any) {
-      console.error("Thumbnail upload error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload thumbnail",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleRecrop = () => {
-    if (formData.image_url) {
-      setTempImageUrl(formData.image_url);
-      setCropperOpen(true);
-    }
-  };
-
-  // Logic to remove the main thumbnail from the UI (will be saved as null on update)
-  const handleRemoveThumbnail = () => {
-    setFormData({ ...formData, image_url: "" });
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from("artworks")
-        .update({
-          title: formData.title,
-          image_url: formData.image_url || null,
-          creation_year: formData.creation_year ? parseInt(formData.creation_year) : null,
-          medium: formData.medium || null,
-          dimensions: formData.dimensions || null,
-          dimension_unit: formData.dimension_unit,
-          depth: formData.depth ? parseFloat(formData.depth) : null,
-          status: formData.status,
-          price: formData.price ? parseFloat(formData.price) : null,
-          base_currency: formData.base_currency,
-          location: formData.location || null,
-          provenance_log: formData.provenance_log || null,
-        })
-        .eq("id", artwork.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Artwork updated successfully",
-      });
-      
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    setLoading(true);
-
-    try {
-      if (artwork.image_url) {
-        try {
-          const urlParts = artwork.image_url.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          
-          const { error: storageError } = await supabase.storage
-            .from('artwork_images')
-            .remove([fileName]);
-
-          if (storageError) {
-            console.error("Storage deletion error:", storageError);
-          }
-        } catch (storageError: any) {
-          console.error("Storage deletion error:", storageError);
-        }
-      }
-
-      const { error: dbError } = await supabase
-        .from("artworks")
-        .delete()
-        .eq("id", artwork.id);
-
-      if (dbError) throw dbError;
-
-      toast({
-        title: "Success",
-        description: "Artwork deleted successfully",
-      });
-      
-      setShowDeleteDialog(false);
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      console.error("Artwork deletion error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete artwork",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Check for changes to enable/disable the update button
-  const hasChanges = 
-    formData.title !== artwork.title ||
-    formData.image_url !== (artwork.image_url || "") ||
-    formData.creation_year !== (artwork.creation_year?.toString() || "") ||
-    formData.medium !== (artwork.medium || "") ||
-    formData.dimensions !== (artwork.dimensions || "") ||
-    formData.dimension_unit !== (artwork.dimension_unit || "in") ||
-    formData.depth !== (artwork.depth?.toString() || "") ||
-    formData.status !== artwork.status ||
-    formData.price !== (artwork.price?.toString() || "") ||
-    formData.base_currency !== (artwork.base_currency || "USD") ||
-    formData.location !== (artwork.location || "") ||
-    formData.provenance_log !== (artwork.provenance_log || "") ||
-    galleryHasChanges;
-
-  // Handle close attempt with unsaved changes check
   const handleAttemptClose = () => {
     if (hasChanges) {
       setShowUnsavedAlert(true);
@@ -345,7 +107,7 @@ export const EditArtworkDrawer = ({
   };
 
   const handleSaveAndClose = async () => {
-    await handleUpdate(new Event('submit') as any);
+    await handleUpdate();
     setShowUnsavedAlert(false);
   };
 
@@ -354,9 +116,14 @@ export const EditArtworkDrawer = ({
     onClose();
   };
 
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleUpdate();
+  };
+
   return (
     <>
-      <Drawer open={open} onOpenChange={(open) => !open && handleAttemptClose()}>
+      <Drawer open={open} onOpenChange={(isOpen) => !isOpen && handleAttemptClose()}>
         <DrawerContent>
           <DrawerHeader className="relative">
             <Button
@@ -371,19 +138,18 @@ export const EditArtworkDrawer = ({
             <DrawerTitle>Edit Artwork</DrawerTitle>
             <DrawerDescription>Update the details of your artwork</DrawerDescription>
           </DrawerHeader>
-          <form onSubmit={handleUpdate} className="px-4 space-y-6 max-h-[60vh] overflow-y-auto">
+          <form onSubmit={onSubmit} className="px-4 space-y-6 max-h-[60vh] overflow-y-auto">
             {/* MAIN IMAGE UPLOAD */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">Main Thumbnail</Label>
               
-              {formData.image_url && (
+              {imagePreview && (
                 <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted group">
                   <img 
-                    src={formData.image_url} 
+                    src={imagePreview} 
                     alt={formData.title}
                     className="w-full h-full object-contain"
                   />
-                  {/* Added Remove and Recrop Buttons for Main Thumbnail */}
                   <div className="absolute top-2 right-2 flex gap-2">
                     <button
                       type="button"
@@ -395,7 +161,7 @@ export const EditArtworkDrawer = ({
                     </button>
                     <button
                       type="button"
-                      onClick={handleRemoveThumbnail}
+                      onClick={handleRemoveImage}
                       className="p-1.5 bg-white/80 rounded-full hover:bg-red-100 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
                       title="Remove Thumbnail"
                     >
@@ -410,19 +176,19 @@ export const EditArtworkDrawer = ({
                   id="edit-thumbnail-upload"
                   type="file"
                   accept="image/*"
-                  onChange={handleThumbnailUpload}
+                  onChange={handleFileUpload}
                   disabled={uploading}
                   className="hidden"
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => document.getElementById('edit-thumbnail-upload')?.click()}
+                  onClick={() => document.getElementById("edit-thumbnail-upload")?.click()}
                   disabled={uploading}
                   className="w-full"
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  {uploading ? "Uploading..." : formData.image_url ? "Change Thumbnail" : "Upload Thumbnail"}
+                  {uploading ? "Uploading..." : imagePreview ? "Change Thumbnail" : "Upload Thumbnail"}
                 </Button>
               </div>
               
@@ -459,34 +225,34 @@ export const EditArtworkDrawer = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-medium">Medium</Label>
+                <Label htmlFor="edit-medium">Medium *</Label>
                 <Input
                   id="edit-medium"
                   list="edit-medium-suggestions"
                   placeholder="e.g., Oil on canvas"
                   value={formData.medium}
                   onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
+                  className={errors.medium ? "border-destructive" : ""}
                 />
                 <datalist id="edit-medium-suggestions">
                   {distinctMedia.map((medium) => (
                     <option key={medium} value={medium} />
                   ))}
                 </datalist>
+                {errors.medium && (
+                  <p className="text-sm text-destructive">Medium is required</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-dimensions">Dimensions (H x W)</Label>
+                <Label htmlFor="edit-dimensions">Dimensions (H x W) *</Label>
                 <div className="flex gap-2">
                   <Input
                     id="edit-dimensions"
                     placeholder="e.g. 24 x 36 (Enter numbers only)"
                     value={formData.dimensions}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData({ ...formData, dimensions: value });
-                      setDimensionUnitWarning(checkForUnits(value));
-                    }}
-                    className="flex-1"
+                    onChange={(e) => handleDimensionsChange(e.target.value)}
+                    className={`flex-1 ${errors.dimensions ? "border-destructive" : ""}`}
                   />
                   <Select
                     value={formData.dimension_unit}
@@ -506,6 +272,9 @@ export const EditArtworkDrawer = ({
                   <p className="text-sm text-amber-600 dark:text-amber-500">
                     ⚠️ Please select the unit from the dropdown instead of typing it.
                   </p>
+                )}
+                {errors.dimensions && (
+                  <p className="text-sm text-destructive">Dimensions are required</p>
                 )}
               </div>
 
@@ -547,67 +316,43 @@ export const EditArtworkDrawer = ({
 
               <div className="space-y-2">
                 <Label htmlFor="edit-price">Price</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="edit-price"
-                  type="number"
-                  step="1"
-                  min="0"
-                  placeholder="0"
-                  value={formData.price}
-                  onKeyDown={(e) => {
-                    // Block decimal point and comma
-                    if (e.key === '.' || e.key === ',') {
-                      e.preventDefault();
-                      toast({
-                        title: "Whole numbers only",
-                        description: "Please enter an integer value without decimals",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Allow empty or whole numbers only
-                    if (value === '' || /^\d+$/.test(value)) {
-                      setFormData({ ...formData, price: value });
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // Round any pasted decimal values
-                    const value = e.target.value;
-                    if (value && value.includes('.')) {
-                      const rounded = Math.round(parseFloat(value)).toString();
-                      setFormData({ ...formData, price: rounded });
-                      toast({
-                        title: "Value rounded",
-                        description: "Decimal values are not allowed. The price has been rounded to the nearest whole number.",
-                      });
-                    }
-                  }}
-                  className="flex-1"
-                  style={{
-                    appearance: 'textfield',
-                    MozAppearance: 'textfield',
-                    WebkitAppearance: 'none'
-                  }}
-                />
-                <Select
-                  value={formData.base_currency}
-                  onValueChange={(value) => setFormData({ ...formData, base_currency: value })}
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex gap-2">
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="0"
+                    value={formData.price}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || /^\d+$/.test(val)) {
+                        setFormData({ ...formData, price: val });
+                      }
+                    }}
+                    className="flex-1"
+                    style={{
+                      appearance: "textfield",
+                      MozAppearance: "textfield",
+                      WebkitAppearance: "none",
+                    }}
+                  />
+                  <Select
+                    value={formData.base_currency}
+                    onValueChange={(value) => setFormData({ ...formData, base_currency: value })}
+                  >
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {formData.price && parseFloat(formData.price) > 0 && !isRateFailed && currencyCode !== formData.base_currency && (
                   <p className="text-xs text-muted-foreground">
                     ≈ {convertPrice(parseFloat(formData.price), formData.base_currency)}
@@ -667,7 +412,7 @@ export const EditArtworkDrawer = ({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteDialog(true)}
                 disabled={loading}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -696,7 +441,7 @@ export const EditArtworkDrawer = ({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmDelete}
+              onClick={handleDelete}
               disabled={loading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
