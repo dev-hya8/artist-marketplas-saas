@@ -1,73 +1,25 @@
-# Welcome to your Lovable project
+# Artha
 
-## Project info
+> [!WARNING]
+> **Status: Archived**
+> This project is a legacy codebase and is no longer under active development. It is maintained here for reference and archival purposes.
 
-**URL**: https://lovable.dev/projects/a31e8983-622e-4166-b57b-0e996714f17c
+Artha was an artist marketplace platform designed to bridge the gap between creators and collectors.
 
-## How can I edit this code?
+This repository serves as a record of the technical architecture and experimental development behind the Artha ecosystem. Built as a high-performance SaaS, it explored the integration of decentralized data management and intuitive user interfaces for digital commerce.
 
-There are several ways of editing your application.
+## Core Architecture
 
-**Use Lovable**
+- **Framework:** React (TypeScript)
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS & shadcn-ui
+- **Data & Auth:** Supabase (PostgreSQL, Authentication, and Edge Functions)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a31e8983-622e-4166-b57b-0e996714f17c) and start prompting.
+## Documentation & References
 
-Changes made via Lovable will be committed automatically to this repo.
+Because this project is archived, it is not intended to be deployed in its current state. The following components exist within the codebase for architectural reference:
 
-**Use your preferred IDE**
+*   [`/supabase/migrations`](file:///Users/hya/Desktop/Coding%20/Artist%20Marketplace/supabase/migrations): Database schema evolution and SQL configurations.
+*   [`/supabase/functions`](file:///Users/hya/Desktop/Coding%20/Artist%20Marketplace/supabase/functions): Logic handled via Supabase Edge Functions.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a31e8983-622e-4166-b57b-0e996714f17c) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Built by Hya.
