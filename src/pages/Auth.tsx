@@ -83,112 +83,18 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate inputs before submission
-    const validation = validateSignUp({ name, email, password });
-    
-    if (!validation.valid) {
-      toast({
-        title: "Validation Error",
-        description: validation.error,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // SignupForm: Use Supabase client to register new client
-      const { error } = await supabase.auth.signUp({
-        email: validation.data!.email,
-        password: validation.data!.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/history`,
-          data: {
-            full_name: validation.data!.name,
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      // Log Critical Authentication Event: SIGNUP_SUCCESS
-      await supabase.functions.invoke('log-audit-event', {
-        body: {
-          action: 'SIGNUP_SUCCESS',
-          metadata: { email: validation.data!.email }
-        }
-      });
-
-      toast({
-        title: "Success!",
-        description: "Please check your email to confirm your account.",
-      });
-      
-      // Clear form
-      setEmail("");
-      setPassword("");
-      setName("");
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    toast({
+      title: "Demo Mode",
+      description: "Account creation is disabled in the demo.",
+    });
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate inputs before submission
-    const validation = validateSignIn({ email, password });
-    
-    if (!validation.valid) {
-      toast({
-        title: "Validation Error",
-        description: validation.error,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // LoginForm: Use Supabase client to authenticate the client
-      const { error } = await supabase.auth.signInWithPassword({
-        email: validation.data!.email,
-        password: validation.data!.password,
-      });
-
-      if (error) throw error;
-
-      // Log Critical Authentication Event: LOGIN_SUCCESS
-      await supabase.functions.invoke('log-audit-event', {
-        body: {
-          action: 'LOGIN_SUCCESS',
-          metadata: { email: validation.data!.email }
-        }
-      });
-
-      toast({
-        title: "Success!",
-        description: "You've been signed in. Redirecting...",
-      });
-      
-      // Redirection: After successful login, redirect to Transaction History page
-      // Note: The useEffect with onAuthStateChange handles the actual redirect
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    toast({
+      title: "Demo Mode",
+      description: "Account creation is disabled in the demo.",
+    });
   };
 
   return (

@@ -109,54 +109,10 @@ export default function ArtistSignup() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email.includes("@") || password.length < 6) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email and password (min 6 characters)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/signup`,
-          data: { full_name: "Artist" }
-        }
-      });
-
-      if (error) throw error;
-
-      // Check if email confirmation is required
-      if (data.user && !data.session) {
-        // Email confirmation required
-        setStep("confirm-email");
-        toast({
-          title: "Check your email!",
-          description: "We sent you a confirmation link. Click it to continue.",
-        });
-      } else if (data.session) {
-        // No email confirmation required, proceed to claim
-        toast({
-          title: "Account Created!",
-          description: "Now let's claim your unique gallery URL.",
-        });
-        setStep("claim");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    toast({
+      title: "Demo Mode",
+      description: "Account creation is disabled in the demo.",
+    });
   };
 
   const handleClaimUrl = async (e: React.FormEvent) => {
